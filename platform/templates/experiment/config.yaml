@@ -1,0 +1,292 @@
+# Experiment Configuration Template
+# Replace {PLACEHOLDER} values with actual configuration
+
+experiment:
+  name: "{EXPERIMENT_NAME}"
+  id: "{EXPERIMENT_ID}"
+  version: "1.0.0"
+  description: "{EXPERIMENT_DESCRIPTION}"
+  type: "{EXPERIMENT_TYPE}" # prompt_engineering, model_comparison, ablation_study, benchmark
+  
+  # Experiment metadata
+  metadata:
+    created_by: "{RESEARCHER_NAME}"
+    created_date: "{CREATION_DATE}"
+    last_modified: "{MODIFICATION_DATE}"
+    tags: ["{TAG1}", "{TAG2}", "{TAG3}"]
+    priority: "{PRIORITY}" # low, medium, high, critical
+    
+  # Reproducibility settings
+  reproducibility:
+    random_seed: 42
+    deterministic: true
+    environment:
+      python_version: "{PYTHON_VERSION}"
+      cuda_version: "{CUDA_VERSION}"
+      framework_versions:
+        torch: "{TORCH_VERSION}"
+        transformers: "{TRANSFORMERS_VERSION}"
+        numpy: "{NUMPY_VERSION}"
+
+# Model configuration
+models:
+  primary:
+    name: "{MODEL_NAME}"
+    provider: "{PROVIDER}" # openai, anthropic, huggingface, local
+    version: "{MODEL_VERSION}"
+    temperature: 0.7
+    max_tokens: 2048
+    top_p: 1.0
+    frequency_penalty: 0.0
+    presence_penalty: 0.0
+    
+  # Comparison models (for comparative studies)
+  comparison:
+    - name: "{BASELINE_MODEL}"
+      provider: "{BASELINE_PROVIDER}"
+      version: "{BASELINE_VERSION}"
+      temperature: 0.7
+      max_tokens: 2048
+    
+    - name: "{ALTERNATIVE_MODEL}"
+      provider: "{ALTERNATIVE_PROVIDER}"
+      version: "{ALTERNATIVE_VERSION}"
+      temperature: 0.7
+      max_tokens: 2048
+
+# Data configuration
+data:
+  input:
+    # Training data
+    train:
+      path: "data/train.jsonl"
+      format: "jsonl" # jsonl, csv, json, parquet
+      size: "{TRAIN_SIZE}"
+      preprocessing:
+        - tokenization
+        - normalization
+        - filtering
+    
+    # Validation data
+    validation:
+      path: "data/validation.jsonl"
+      format: "jsonl"
+      size: "{VALIDATION_SIZE}"
+      split_ratio: 0.2
+    
+    # Test data
+    test:
+      path: "data/test.jsonl"
+      format: "jsonl"
+      size: "{TEST_SIZE}"
+      split_ratio: 0.1
+  
+  # Output configuration
+  output:
+    results_dir: "results/"
+    format: "jsonl"
+    save_predictions: true
+    save_intermediates: true
+    compression: "gzip"
+
+# Prompt configuration
+prompts:
+  system_prompt:
+    template_path: "prompts/system.md"
+    variables:
+      role: "{SYSTEM_ROLE}"
+      context: "{SYSTEM_CONTEXT}"
+      constraints: "{SYSTEM_CONSTRAINTS}"
+  
+  user_prompt:
+    template_path: "prompts/user.md"
+    variables:
+      task_description: "{TASK_DESCRIPTION}"
+      input_format: "{INPUT_FORMAT}"
+      output_format: "{OUTPUT_FORMAT}"
+  
+  few_shot:
+    enabled: true
+    examples_path: "prompts/examples.jsonl"
+    num_examples: 3
+    selection_strategy: "random" # random, similarity, diverse
+
+# Evaluation configuration
+evaluation:
+  metrics:
+    primary:
+      - name: "accuracy"
+        weight: 0.4
+        higher_better: true
+      - name: "f1_score"
+        weight: 0.3
+        higher_better: true
+      - name: "precision"
+        weight: 0.15
+        higher_better: true
+      - name: "recall"
+        weight: 0.15
+        higher_better: true
+    
+    secondary:
+      - name: "latency"
+        weight: 0.2
+        higher_better: false
+        unit: "seconds"
+      - name: "cost"
+        weight: 0.1
+        higher_better: false
+        unit: "dollars"
+  
+  # Statistical testing
+  statistical_tests:
+    significance_level: 0.05
+    multiple_comparisons: "bonferroni"
+    effect_size: "cohens_d"
+  
+  # Human evaluation (if applicable)
+  human_eval:
+    enabled: false
+    annotators: 3
+    agreement_threshold: 0.8
+    platform: "{ANNOTATION_PLATFORM}"
+
+# Experimental parameters
+parameters:
+  # Hyperparameter search
+  hyperparameters:
+    temperature:
+      type: "continuous"
+      range: [0.1, 1.0]
+      default: 0.7
+      search_strategy: "grid" # grid, random, bayesian
+    
+    max_tokens:
+      type: "discrete"
+      values: [512, 1024, 2048, 4096]
+      default: 2048
+    
+    num_examples:
+      type: "discrete"
+      values: [1, 3, 5, 10]
+      default: 3
+  
+  # Experimental conditions
+  conditions:
+    - name: "baseline"
+      description: "Standard configuration"
+      active: true
+    
+    - name: "optimized"
+      description: "Optimized configuration"
+      active: true
+      modifications:
+        temperature: 0.3
+        max_tokens: 1024
+    
+    - name: "ablation"
+      description: "Ablation study condition"
+      active: false
+      modifications:
+        few_shot.enabled: false
+
+# Infrastructure configuration
+infrastructure:
+  compute:
+    provider: "{COMPUTE_PROVIDER}" # local, aws, gcp, azure
+    instance_type: "{INSTANCE_TYPE}"
+    gpu_type: "{GPU_TYPE}"
+    memory_gb: "{MEMORY_GB}"
+    storage_gb: "{STORAGE_GB}"
+  
+  parallelization:
+    enabled: true
+    max_workers: 4
+    batch_size: 32
+    async_requests: true
+  
+  monitoring:
+    enabled: true
+    log_level: "INFO"
+    metrics_interval: 300 # seconds
+    save_checkpoints: true
+    checkpoint_interval: 1000 # steps
+
+# Budget and limits
+limits:
+  max_cost: "${MAX_COST}" # Maximum cost in dollars
+  max_duration: "${MAX_DURATION}" # Maximum duration in hours
+  max_tokens: ${MAX_TOTAL_TOKENS} # Maximum total tokens
+  max_requests: ${MAX_REQUESTS} # Maximum API requests
+  
+  # Rate limiting
+  rate_limits:
+    requests_per_second: 10
+    tokens_per_minute: 50000
+    concurrent_requests: 5
+
+# Reporting configuration
+reporting:
+  # Automated reporting
+  auto_report:
+    enabled: true
+    frequency: "daily" # hourly, daily, weekly
+    format: ["html", "pdf", "json"]
+    recipients: ["{EMAIL_1}", "{EMAIL_2}"]
+  
+  # Visualization
+  visualizations:
+    enabled: true
+    plot_types: ["line", "bar", "scatter", "heatmap"]
+    save_formats: ["png", "svg", "pdf"]
+    interactive: true
+  
+  # Comparison
+  comparison:
+    baseline_experiment: "{BASELINE_EXPERIMENT_ID}"
+    comparison_metrics: ["accuracy", "latency", "cost"]
+    statistical_tests: true
+
+# Integration settings
+integrations:
+  # Version control
+  git:
+    enabled: true
+    auto_commit: true
+    commit_frequency: "checkpoint"
+  
+  # Experiment tracking
+  tracking:
+    platform: "{TRACKING_PLATFORM}" # wandb, mlflow, tensorboard
+    project: "{PROJECT_NAME}"
+    tags: ["{TAG1}", "{TAG2}"]
+  
+  # Notifications
+  notifications:
+    slack:
+      enabled: false
+      webhook_url: "{SLACK_WEBHOOK}"
+      channels: ["#experiments"]
+    
+    email:
+      enabled: true
+      smtp_server: "{SMTP_SERVER}"
+      recipients: ["{EMAIL_1}"]
+      events: ["start", "complete", "error"]
+
+# Security and compliance
+security:
+  data_privacy:
+    anonymize_data: true
+    encryption_at_rest: true
+    encryption_in_transit: true
+  
+  access_control:
+    require_authentication: true
+    authorized_users: ["{USER_1}", "{USER_2}"]
+    audit_logging: true
+  
+  compliance:
+    frameworks: ["GDPR", "HIPAA"] # Applicable compliance frameworks
+    data_retention_days: 90
+    deletion_policy: "automatic"

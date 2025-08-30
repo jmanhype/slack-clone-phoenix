@@ -1,0 +1,123 @@
+# MCP Server Registry Configuration
+# Defines available MCP servers and their tool schemas
+
+version: "1.0"
+
+servers:
+  # Core MCP Servers
+  playwright:
+    command: "npx"
+    args: ["@modelcontextprotocol/server-playwright@latest"]
+    env:
+      NODE_ENV: "production"
+    tools:
+      - name: "playwright_navigate"
+        description: "Navigate to a URL"
+        inputSchema:
+          type: "object"
+          properties:
+            url:
+              type: "string"
+              description: "URL to navigate to"
+          required: ["url"]
+      - name: "playwright_click"
+        description: "Click an element"
+        inputSchema:
+          type: "object"
+          properties:
+            selector:
+              type: "string"
+              description: "CSS selector"
+          required: ["selector"]
+      - name: "playwright_screenshot"
+        description: "Take a screenshot"
+        inputSchema:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+              description: "Screenshot name"
+          required: ["name"]
+    metadata:
+      category: "browser-automation"
+      version: "1.0.0"
+      author: "Anthropic"
+      tags: ["web", "automation", "testing"]
+
+  filesystem:
+    command: "npx"
+    args: ["@modelcontextprotocol/server-filesystem@latest", "/Users/speed/Downloads/experiments"]
+    tools:
+      - name: "read_file"
+        description: "Read a file's contents"
+        inputSchema:
+          type: "object"
+          properties:
+            path:
+              type: "string"
+              description: "File path to read"
+          required: ["path"]
+      - name: "write_file"
+        description: "Write content to a file"
+        inputSchema:
+          type: "object"
+          properties:
+            path:
+              type: "string"
+              description: "File path to write"
+            content:
+              type: "string"
+              description: "Content to write"
+          required: ["path", "content"]
+    metadata:
+      category: "filesystem"
+      version: "1.0.0"
+      author: "Anthropic"
+      tags: ["files", "io", "storage"]
+
+  memory:
+    command: "npx"
+    args: ["@modelcontextprotocol/server-memory@latest"]
+    tools:
+      - name: "store_memory"
+        description: "Store information in memory"
+        inputSchema:
+          type: "object"
+          properties:
+            key:
+              type: "string"
+              description: "Memory key"
+            value:
+              type: "string"
+              description: "Value to store"
+          required: ["key", "value"]
+    metadata:
+      category: "storage"
+      version: "1.0.0"
+      author: "Anthropic"
+      tags: ["memory", "storage", "persistence"]
+
+# Global Configuration
+global:
+  timeout: 30000
+  retries: 3
+  concurrency: 4
+  logging:
+    level: "info"
+    format: "json"
+    output: "logs/mcp.log"
+
+# Security Settings
+security:
+  allowedDomains:
+    - "localhost"
+    - "127.0.0.1"
+    - "*.anthropic.com"
+  blockedCommands:
+    - "rm -rf"
+    - "sudo"
+    - "chmod 777"
+  sandboxMode: true
+  maxMemoryUsage: "512MB"
+  maxExecutionTime: 60000
+EOF < /dev/null

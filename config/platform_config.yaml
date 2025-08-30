@@ -1,0 +1,199 @@
+# Platform Configuration
+# Core settings for the experimental platform
+
+platform:
+  name: "Claude Code Experiments"
+  version: "1.0.0"
+  environment: "development"
+  
+  # Core directories
+  paths:
+    root: "/Users/speed/Downloads/experiments"
+    experiments: "./experiments"
+    templates: "./platform/templates"
+    data: "./data"
+    logs: "./logs"
+    cache: "./cache"
+    registry: "./registry"
+    
+  # Pipeline configuration
+  pipeline:
+    defaultConcurrency: 4
+    maxConcurrency: 16
+    batchSize: 100
+    timeout: 30000
+    backpressure:
+      enabled: true
+      highWaterMark: 16
+      maxBuffer: 1000
+    
+    # NDJSON processing
+    ndjson:
+      validateOnRead: true
+      skipInvalidLines: false
+      maxLineLength: 1048576 # 1MB
+      encoding: "utf8"
+      
+  # Memory management
+  memory:
+    maxHeapSize: "2GB"
+    gcInterval: 300000 # 5 minutes
+    cacheTimeout: 3600000 # 1 hour
+    persistentStorage: true
+    
+  # Networking
+  network:
+    maxConnections: 100
+    connectionTimeout: 10000
+    requestTimeout: 30000
+    retryCount: 3
+    retryDelay: 1000
+    
+  # Security
+  security:
+    sandboxMode: true
+    allowedFileExtensions:
+      - ".ts"
+      - ".js"
+      - ".json"
+      - ".yaml"
+      - ".yml"
+      - ".md"
+      - ".txt"
+    blockedPaths:
+      - "/etc"
+      - "/usr"
+      - "/system"
+      - "node_modules"
+    maxFileSize: "100MB"
+    
+# Experiment configuration
+experiments:
+  defaultTemplate: "basic"
+  autoGenerate:
+    enabled: true
+    includeReadme: true
+    includeConfig: true
+    includeEval: true
+  
+  # Validation rules
+  validation:
+    requireDescription: true
+    requireMetadata: true
+    maxNameLength: 50
+    allowedCharacters: "[a-zA-Z0-9_-]"
+    
+  # Execution settings
+  execution:
+    timeout: 300000 # 5 minutes
+    maxMemory: "1GB"
+    maxCpu: 80 # percentage
+    isolateProcesses: true
+    
+# Data processing
+data:
+  formats:
+    - "ndjson"
+    - "json"
+    - "yaml"
+    - "csv"
+    - "txt"
+    
+  processing:
+    streaming: true
+    compression: true
+    encryption: false
+    backup: true
+    
+  # Registry settings
+  registry:
+    autoIndex: true
+    indexInterval: 60000
+    compression: true
+    maxEntries: 10000
+    cleanupInterval: 3600000
+
+# Monitoring and metrics
+monitoring:
+  enabled: true
+  metricsPort: 9090
+  healthCheckPort: 8080
+  
+  # Metrics collection
+  metrics:
+    collectInterval: 30000
+    retentionPeriod: 604800000 # 7 days
+    enableProfiling: false
+    
+  # Health checks
+  healthCheck:
+    interval: 30000
+    timeout: 5000
+    endpoints:
+      - "/health"
+      - "/metrics"
+      - "/ready"
+      
+  # Alerting
+  alerts:
+    enabled: false
+    thresholds:
+      errorRate: 0.05
+      responseTime: 5000
+      memoryUsage: 0.8
+      diskUsage: 0.9
+
+# Logging configuration
+logging:
+  level: "info"
+  format: "json"
+  timestamp: true
+  
+  # Log targets
+  targets:
+    console:
+      enabled: true
+      level: "info"
+      format: "pretty"
+    file:
+      enabled: true
+      level: "debug"
+      path: "logs/platform.log"
+      maxSize: "100MB"
+      maxFiles: 5
+      
+  # Log categories
+  categories:
+    platform: "info"
+    pipeline: "debug"
+    experiments: "info"
+    security: "warn"
+    performance: "info"
+
+# Development settings
+development:
+  hotReload: true
+  debugMode: false
+  verboseLogging: false
+  enableTracing: false
+  
+  # Testing
+  testing:
+    mockExternalServices: false
+    recordRequests: false
+    replayMode: false
+    testDataPath: "./tests/data"
+    
+# Production overrides
+production:
+  logging:
+    level: "warn"
+    console:
+      enabled: false
+  monitoring:
+    enabled: true
+  security:
+    sandboxMode: true
+  performance:
+    optimizationsEnabled: true
+EOF < /dev/null

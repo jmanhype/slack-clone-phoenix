@@ -1,0 +1,141 @@
+{
+  "version": "1.0.0",
+  "policies": {
+    "fileAccess": {
+      "allowedPaths": [
+        "/Users/speed/Downloads/experiments",
+        "/Users/speed/Downloads/experiments/**",
+        "./data/**",
+        "./logs/**",
+        "./cache/**",
+        "./experiments/**"
+      ],
+      "deniedPaths": [
+        "/etc/**",
+        "/usr/**",
+        "/system/**",
+        "/root/**",
+        "~/.ssh/**",
+        "~/.aws/**",
+        "**/node_modules/**",
+        "**/.git/**"
+      ],
+      "allowedExtensions": [
+        ".ts", ".js", ".json", ".yaml", ".yml", 
+        ".md", ".txt", ".csv", ".ndjson",
+        ".html", ".css", ".sql"
+      ],
+      "maxFileSize": "100MB",
+      "maxTotalSize": "1GB"
+    },
+    
+    "networkAccess": {
+      "allowedDomains": [
+        "localhost",
+        "127.0.0.1",
+        "*.anthropic.com",
+        "api.openai.com",
+        "registry.npmjs.org"
+      ],
+      "deniedDomains": [
+        "*.onion",
+        "*.tor",
+        "suspicious-domain.com"
+      ],
+      "allowedPorts": [80, 443, 3000, 3001, 8080, 9090],
+      "maxConnections": 50,
+      "timeout": 30000
+    },
+    
+    "codeExecution": {
+      "allowedCommands": [
+        "node", "npm", "npx", "tsc", "jest",
+        "git", "cat", "ls", "mkdir", "cp", "mv"
+      ],
+      "deniedCommands": [
+        "rm -rf", "sudo", "chmod 777", "eval",
+        "exec", "system", "shell_exec"
+      ],
+      "maxExecutionTime": 300000,
+      "maxMemoryUsage": "2GB",
+      "maxCpuUsage": 80,
+      "sandboxMode": true
+    },
+    
+    "dataProcessing": {
+      "maxRecordsPerBatch": 10000,
+      "maxBatchSize": "50MB",
+      "allowedFormats": [
+        "json", "ndjson", "yaml", "csv", "txt"
+      ],
+      "validation": {
+        "required": true,
+        "strictMode": false,
+        "schemaValidation": true
+      }
+    },
+    
+    "apiAccess": {
+      "rateLimiting": {
+        "requests": 100,
+        "window": 60000
+      },
+      "authentication": {
+        "required": false,
+        "methods": ["bearer", "api-key"]
+      },
+      "allowedMethods": ["GET", "POST", "PUT", "DELETE"],
+      "maxResponseSize": "10MB"
+    }
+  },
+  
+  "enforcement": {
+    "mode": "strict",
+    "violations": {
+      "logLevel": "warn",
+      "blockExecution": true,
+      "alertThreshold": 5,
+      "quarantineOnRepeat": true
+    },
+    "monitoring": {
+      "enabled": true,
+      "auditLog": "logs/security-audit.log",
+      "metricsCollection": true,
+      "alerting": true
+    }
+  },
+  
+  "compliance": {
+    "dataRetention": {
+      "maxAge": "30d",
+      "autoCleanup": true,
+      "archiveBeforeDelete": true
+    },
+    "privacy": {
+      "anonymizeData": false,
+      "encryptSensitiveData": false,
+      "dataClassification": true
+    },
+    "audit": {
+      "logAllAccess": true,
+      "includeTimestamps": true,
+      "includeUserContext": true,
+      "retentionPeriod": "90d"
+    }
+  },
+  
+  "exceptions": {
+    "temporaryOverrides": {
+      "enabled": false,
+      "maxDuration": 3600000,
+      "requireApproval": true,
+      "auditRequired": true
+    },
+    "emergencyAccess": {
+      "enabled": false,
+      "contacts": [],
+      "procedures": "docs/emergency-procedures.md"
+    }
+  }
+}
+EOF < /dev/null

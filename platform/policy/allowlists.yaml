@@ -1,0 +1,331 @@
+# Security Allowlists
+# Defines what resources, commands, and operations are permitted
+
+version: "1.0.0"
+
+# File system access allowlists
+filesystem:
+  paths:
+    read:
+      - "/Users/speed/Downloads/experiments/**"
+      - "./data/**"
+      - "./logs/**"
+      - "./registry/**"
+      - "./platform/templates/**"
+      - "./experiments/**"
+      - "/tmp/claude-code/**"
+    
+    write:
+      - "/Users/speed/Downloads/experiments/experiments/**"
+      - "/Users/speed/Downloads/experiments/data/**"
+      - "/Users/speed/Downloads/experiments/logs/**"
+      - "/Users/speed/Downloads/experiments/cache/**"
+      - "/Users/speed/Downloads/experiments/registry/**"
+      - "/tmp/claude-code/**"
+    
+    execute:
+      - "/Users/speed/Downloads/experiments/platform/scripts/**"
+      - "/usr/local/bin/node"
+      - "/usr/local/bin/npm"
+      - "/usr/local/bin/npx"
+    
+  extensions:
+    allowed:
+      - ".ts"
+      - ".js"
+      - ".json"
+      - ".yaml"
+      - ".yml"
+      - ".md"
+      - ".txt"
+      - ".csv"
+      - ".ndjson"
+      - ".html"
+      - ".css"
+      - ".sql"
+      - ".log"
+    
+    denied:
+      - ".exe"
+      - ".bat"
+      - ".sh"
+      - ".bin"
+      - ".app"
+      - ".dmg"
+      - ".pkg"
+
+# Network access allowlists
+network:
+  domains:
+    allowed:
+      - "localhost"
+      - "127.0.0.1"
+      - "0.0.0.0"
+      - "*.anthropic.com"
+      - "api.openai.com"
+      - "registry.npmjs.org"
+      - "cdn.jsdelivr.net"
+      - "unpkg.com"
+      - "github.com"
+      - "api.github.com"
+      - "raw.githubusercontent.com"
+      
+    denied:
+      - "*.onion"
+      - "*.tor"
+      - "*.bit"
+      - "suspicious-domain.com"
+      - "malware-site.com"
+      
+  ports:
+    allowed:
+      - 80
+      - 443
+      - 3000
+      - 3001
+      - 3002
+      - 8000
+      - 8080
+      - 8443
+      - 9000
+      - 9090
+      
+  protocols:
+    allowed:
+      - "http"
+      - "https"
+      - "ws"
+      - "wss"
+    
+    denied:
+      - "ftp"
+      - "sftp"
+      - "telnet"
+      - "ssh"
+
+# Command execution allowlists
+commands:
+  allowed:
+    # Node.js and npm
+    - "node"
+    - "npm"
+    - "npx"
+    - "yarn"
+    - "pnpm"
+    
+    # TypeScript
+    - "tsc"
+    - "ts-node"
+    
+    # Testing
+    - "jest"
+    - "mocha"
+    - "cypress"
+    - "playwright"
+    
+    # Build tools
+    - "webpack"
+    - "vite"
+    - "rollup"
+    - "esbuild"
+    
+    # Git
+    - "git"
+    
+    # File operations
+    - "cat"
+    - "ls"
+    - "mkdir"
+    - "cp"
+    - "mv"
+    - "touch"
+    - "head"
+    - "tail"
+    - "grep"
+    - "find"
+    - "wc"
+    
+    # Text processing
+    - "sed"
+    - "awk"
+    - "sort"
+    - "uniq"
+    - "jq"
+    
+  denied:
+    # Dangerous operations
+    - "rm -rf"
+    - "sudo"
+    - "su"
+    - "chmod 777"
+    - "chown"
+    
+    # System modification
+    - "systemctl"
+    - "service"
+    - "crontab"
+    - "kill"
+    - "killall"
+    
+    # Network tools
+    - "netcat"
+    - "nc"
+    - "nmap"
+    - "wget"
+    - "curl" # Restricted to specific use cases
+    
+    # Code execution
+    - "eval"
+    - "exec"
+    - "system"
+    - "shell_exec"
+    - "python -c"
+    - "ruby -e"
+    
+  parameters:
+    # Restricted command parameters
+    git:
+      allowed:
+        - "status"
+        - "log"
+        - "diff"
+        - "show"
+        - "branch"
+        - "checkout"
+        - "add"
+        - "commit"
+        - "push"
+        - "pull"
+        - "clone"
+      denied:
+        - "reset --hard"
+        - "clean -fdx"
+        - "push --force"
+
+# API and service allowlists
+apis:
+  endpoints:
+    allowed:
+      - "https://api.anthropic.com/**"
+      - "https://api.openai.com/**"
+      - "https://registry.npmjs.org/**"
+      - "https://api.github.com/**"
+      - "http://localhost:*/**"
+      - "http://127.0.0.1:*/**"
+    
+    denied:
+      - "https://suspicious-api.com/**"
+      - "http://internal-network/**"
+      
+  methods:
+    allowed: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    denied: ["TRACE", "CONNECT"]
+    
+  headers:
+    required:
+      - "User-Agent"
+      - "Content-Type"
+    
+    blocked:
+      - "X-Forwarded-For"
+      - "X-Real-IP"
+
+# Data processing allowlists
+data:
+  formats:
+    allowed:
+      - "json"
+      - "ndjson"
+      - "yaml"
+      - "yml"
+      - "csv"
+      - "tsv"
+      - "txt"
+      - "md"
+      - "html"
+      - "xml"
+    
+    denied:
+      - "binary"
+      - "executable"
+      - "archive"
+      
+  operations:
+    allowed:
+      - "read"
+      - "write"
+      - "transform"
+      - "validate"
+      - "aggregate"
+      - "filter"
+      - "sort"
+    
+    denied:
+      - "encrypt"
+      - "decrypt"
+      - "compress"
+      - "decompress"
+      
+  sources:
+    allowed:
+      - "local-file"
+      - "http-endpoint"
+      - "memory"
+      - "stream"
+    
+    denied:
+      - "database"
+      - "cache"
+      - "external-api"
+
+# Resource limits
+limits:
+  file:
+    maxSize: "100MB"
+    maxCount: 1000
+    
+  memory:
+    maxUsage: "2GB"
+    maxBufferSize: "100MB"
+    
+  cpu:
+    maxUsage: 80 # percentage
+    maxTime: 300000 # milliseconds
+    
+  network:
+    maxConnections: 50
+    maxBandwidth: "100MB/s"
+    maxResponseSize: "50MB"
+    timeout: 30000
+    
+  process:
+    maxProcesses: 10
+    maxThreads: 20
+    maxChildProcesses: 5
+
+# Monitoring and compliance
+monitoring:
+  auditLog: true
+  metricsCollection: true
+  alerting: true
+  
+  violations:
+    logLevel: "warn"
+    blockExecution: true
+    notifyAdmins: false
+    quarantineThreshold: 5
+    
+compliance:
+  dataRetention: "30d"
+  logRetention: "90d"
+  anonymization: false
+  encryption: false
+  
+# Emergency overrides
+emergency:
+  enabled: false
+  contacts: []
+  procedures: "docs/emergency-procedures.md"
+  maxDuration: "1h"
+  auditRequired: true
+EOF < /dev/null
