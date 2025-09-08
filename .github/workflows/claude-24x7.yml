@@ -1,0 +1,44 @@
+name: Claude 24x7 Orchestrator
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 minutes, keep-alive / recover
+  push:
+    paths:
+      - "automation/tmux/**"
+      - "config/claude_code.settings.yaml"
+      - ".github/workflows/claude-24x7.yml"
+
+# NOTE:
+# - This workflow must run on a self-hosted runner where tmux is installed
+#   and long-lived processes are allowed.
+# - Label your runner with: 'claude-host'
+# - Ensure Node 18+ is installed for 'npx claude-flow' calls.
+
+jobs:
+  ensure-orchestrator:
+    runs-on: [self-hosted, claude-host]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Preflight
+        run: |
+          tmux -V || true
+          node -v || true
+          npx -v || true
+
+      - name: Keep Alive / Recover / Start
+        run: |
+          bash .github/ci/ensure-orchestrator.sh
+
+      - name: Print tmux sessions
+        run: |
+          tmux list-sessions || true
+
+      - name: Tail orchestrator log (if present)
+        run: |
+          test -f automation/tmux/logs/orchestrator.log && tail -n 200 automation/tmux/logs/orchestrator.log || true

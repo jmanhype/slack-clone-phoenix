@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+  <key>Label</key>
+  <string>com.cybernetic.claude-orchestrator</string>
+
+  <!-- Run under your user login session -->
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+
+  <!-- Where to run from; EDIT to your repo absolute path -->
+  <key>WorkingDirectory</key>
+  <string>/Users/speed/Downloads/experiments</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>SESSION=CLAUDE_MAIN scripts/macos/ensure-orchestrator.sh</string>
+  </array>
+
+  <!-- Restart if it exits; keep it alive 24/7 -->
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key><false/>
+    <key>Crashed</key><true/>
+    <key>PathState</key>
+    <dict>
+      <!-- restart if the repo dir reappears after being unmounted -->
+      <key>/Users/speed/Downloads/experiments</key><true/>
+    </dict>
+  </dict>
+
+  <!-- Start on login -->
+  <key>RunAtLoad</key><true/>
+
+  <!-- Environment (optional) -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>NODE_ENV</key><string>production</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <!-- Logs (Sonoma+ supports StandardOutPath/StandardErrorPath) -->
+  <key>StandardOutPath</key>
+  <string>/tmp/claude-orchestrator.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/claude-orchestrator.err.log</string>
+
+</dict>
+</plist>

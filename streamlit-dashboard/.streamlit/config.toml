@@ -1,0 +1,45 @@
+[global]
+# Development mode - shows more detailed error messages
+developmentMode = false
+
+# Data directory for uploads and cache
+dataDir = "./data"
+
+[server]
+# Server settings for optimal performance
+port = 8501
+baseUrlPath = ""
+enableCORS = false
+enableXsrfProtection = false
+maxUploadSize = 200
+maxMessageSize = 200
+enableWebsocketCompression = false
+
+# Session settings
+cookieSecret = "analytics-dashboard-secret-key"
+headless = false
+
+# File watcher settings
+fileWatcherType = "auto"
+runOnSave = false
+
+[browser]
+# Browser settings
+gatherUsageStats = false
+showErrorDetails = true
+serverAddress = "localhost"
+serverPort = 8501
+
+[theme]
+# Default theme configuration
+primaryColor = "#FF6B6B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"
+
+[client]
+# Client-side caching
+caching = true
+displayEnabled = true
+toolbarMode = "auto"

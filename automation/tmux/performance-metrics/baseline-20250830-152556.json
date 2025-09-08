@@ -1,0 +1,40 @@
+{
+  "timestamp": "2025-08-30T20:26:43Z",
+  "version": "baseline",
+  "metrics": {
+    "startup_time_seconds": [0;32m[Baseline][0m Measuring orchestrator startup time...
+0,
+    "worker_spawn_latency_seconds": [0;32m[Baseline][0m Measuring worker spawn latency...
+.250,
+    "memory_usage_mb": [0;32m[Baseline][0m Measuring memory usage patterns...
+[0;32m╔══════════════════════════════════════════════════════╗[0m
+[0;32m║         T-Max Orchestrator Initialization            ║[0m
+[0;32m║       Claude Code 24/7 Automation System             ║[0m
+[0;32m╚══════════════════════════════════════════════════════╝[0m
+
+[0;32m[2025-08-30 15:25:57][0m Checking dependencies...
+[0;32m[2025-08-30 15:25:57][0m All dependencies satisfied ✓
+[0;32m[2025-08-30 15:25:57][0m Initializing Claude Flow swarm...
+1037.70,
+    "cpu_usage_percent": [0;32m[Baseline][0m Measuring CPU utilization...
+[0;32m╔══════════════════════════════════════════════════════╗[0m
+[0;32m║         T-Max Orchestrator Initialization            ║[0m
+[0;32m║       Claude Code 24/7 Automation System             ║[0m
+[0;32m╚══════════════════════════════════════════════════════╝[0m
+
+[0;32m[2025-08-30 15:26:19][0m Checking dependencies...
+[0;32m[2025-08-30 15:26:19][0m All dependencies satisfied ✓
+[0;32m[2025-08-30 15:26:19][0m Initializing Claude Flow swarm...
+2.03,
+    "ipc_throughput_msgs_per_sec": [0;32m[Baseline][0m Measuring IPC throughput...,
+    "npx_call_overhead_seconds": [0;32m[Baseline][0m Measuring npx call overhead...
+.200
+  },
+  "system_info": {
+    "hostname": "Mac.lan",
+    "os": "Darwin",
+    "os_version": "24.4.0",
+    "cpu_cores": "10",
+    "memory_gb": "32"
+  }
+}

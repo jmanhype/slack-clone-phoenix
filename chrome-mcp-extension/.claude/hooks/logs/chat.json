@@ -1,0 +1,16 @@
+[
+  {
+    "timestamp": "2025-08-31T13:23:22.533910",
+    "session_id": "unknown",
+    "conversation": {},
+    "message_count": 0,
+    "transcript_path": ".claude/hooks/logs/chat.json"
+  },
+  {
+    "timestamp": "2025-08-31T13:40:51.760145",
+    "session_id": "unknown",
+    "conversation": {},
+    "message_count": 0,
+    "transcript_path": ".claude/hooks/logs/chat.json"
+  }
+]

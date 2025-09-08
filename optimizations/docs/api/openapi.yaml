@@ -1,0 +1,1011 @@
+openapi: 3.0.0
+info:
+  title: Cybernetic Self-Optimization Platform API
+  description: |
+    The Cybernetic API provides access to the self-optimization engine that achieved a 173.0x performance improvement by optimizing its own infrastructure. This API enables systematic performance analysis, SPARC methodology implementation, and production-ready optimizations.
+    
+    ## Key Features
+    - **Self-Analysis**: Autonomous bottleneck identification
+    - **SPARC Methodology**: Systematic optimization design
+    - **173.0x Improvement**: Validated performance gains
+    - **Production Ready**: Comprehensive testing and validation
+    
+    ## Authentication
+    All endpoints require API key authentication via the `X-API-Key` header.
+  version: 1.0.0
+  contact:
+    name: Cybernetic Platform Team
+    url: https://github.com/cybernetic-ai/platform
+    email: support@cybernetic-ai.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.cybernetic-ai.com/v1
+    description: Production server
+  - url: https://staging-api.cybernetic-ai.com/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Local development server
+
+tags:
+  - name: optimization
+    description: Core optimization engine operations
+  - name: analysis
+    description: Performance analysis and bottleneck identification
+  - name: sparc
+    description: SPARC methodology implementation
+  - name: validation
+    description: Testing and validation operations
+  - name: monitoring
+    description: Performance monitoring and metrics
+  - name: integration
+    description: Claude Flow integration and coordination
+  - name: memory
+    description: Memory management and persistence
+  - name: security
+    description: Security validation and compliance
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /optimize:
+    post:
+      tags: [optimization]
+      summary: Optimize system performance
+      description: |
+        Analyzes and optimizes the target system using the same techniques that achieved 173.0x improvement in the Cybernetic platform itself.
+        
+        This endpoint applies the complete optimization pipeline:
+        1. Performance analysis and bottleneck identification
+        2. SPARC methodology for solution design
+        3. Test-driven implementation
+        4. Comprehensive validation
+      operationId: optimizeSystem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptimizationRequest'
+            example:
+              target: ["./src", "./scripts"]
+              mode: auto
+              validation: true
+              methodology: sparc
+              options:
+                maxWorkers: 8
+                timeout: 300
+      responses:
+        '200':
+          description: Optimization completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationResult'
+              example:
+                id: opt_1234567890
+                status: completed
+                improvements:
+                  overall: 173.0
+                  parallel: 7.1
+                  io: 4355.4
+                  pooling: 39.6
+                validation:
+                  passed: true
+                  coverage: 95
+                  security: true
+                deployment:
+                  ready: true
+                  requirements: ["Node.js v14+", "Bash v4+", "Tmux"]
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /analyze:
+    post:
+      tags: [analysis]
+      summary: Analyze system performance
+      description: |
+        Performs comprehensive performance analysis to identify bottlenecks and optimization opportunities.
+        Uses the same analysis techniques that identified the key bottlenecks in Cybernetic's self-optimization.
+      operationId: analyzePerformance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisRequest'
+            example:
+              target: ["./src"]
+              depth: comprehensive
+              metrics: ["execution_time", "memory_usage", "io_operations"]
+              baseline: true
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+              example:
+                id: ana_1234567890
+                bottlenecks:
+                  - type: sequential
+                    location: "./scripts/worker-init.sh:163-182"
+                    impact: 85.9
+                    description: "Sequential worker spawning causes delays"
+                    solution: "Implement parallel spawning with xargs -P"
+                metrics:
+                  executionTime: 8770
+                  memoryUsage: 4.8
+                  throughput: 156
+                recommendations:
+                  - priority: high
+                    type: parallel_processing
+                    description: "Convert sequential operations to parallel"
+                    estimatedImprovement: 7.1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /validate:
+    post:
+      tags: [validation]
+      summary: Validate optimizations
+      description: |
+        Validates optimization improvements through comprehensive testing including A/B testing, 
+        security review, and production readiness assessment.
+      operationId: validateOptimizations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationRequest'
+            example:
+              baseline: "./baseline"
+              optimized: "./optimized"
+              tests: ["unit", "integration", "performance"]
+              abTesting: true
+              production: true
+      responses:
+        '200':
+          description: Validation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+              example:
+                id: val_1234567890
+                passed: true
+                improvements:
+                  measured: 173.0
+                  claimed: 216.9
+                  variance: -43.9
+                tests:
+                  unit: { passed: 45, failed: 0, coverage: 95 }
+                  integration: { passed: 12, failed: 0 }
+                  performance: { passed: 3, failed: 0 }
+                security:
+                  passed: true
+                  vulnerabilities: []
+                deployment:
+                  ready: true
+                  score: 95
+
+  /sparc/{mode}:
+    post:
+      tags: [sparc]
+      summary: Execute SPARC methodology
+      description: |
+        Executes specific phases of the SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) methodology used in Cybernetic's self-optimization.
+      operationId: executeSPARC
+      parameters:
+        - name: mode
+          in: path
+          required: true
+          description: SPARC phase to execute
+          schema:
+            type: string
+            enum: [specification, pseudocode, architecture, refinement, completion, tdd]
+          example: architecture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SPARCRequest'
+            example:
+              task: "Design parallel worker spawning system"
+              context:
+                problem: "Sequential spawning causes 60s delays"
+                constraints: ["Bash compatible", "Error recovery", "Health monitoring"]
+              options:
+                validation: true
+                testing: true
+      responses:
+        '200':
+          description: SPARC phase completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SPARCResult'
+
+  /monitor:
+    get:
+      tags: [monitoring]
+      summary: Get performance metrics
+      description: Real-time performance monitoring and metrics collection
+      operationId: getMetrics
+      parameters:
+        - name: duration
+          in: query
+          description: Monitoring duration in seconds
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 3600
+            default: 60
+        - name: metrics
+          in: query
+          description: Specific metrics to collect
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [cpu, memory, io, throughput, latency]
+          style: form
+          explode: false
+        - name: realtime
+          in: query
+          description: Enable real-time updates
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResult'
+
+  /tasks:
+    get:
+      tags: [integration]
+      summary: List orchestrated tasks
+      description: List all tasks managed by the Claude Flow orchestration system
+      operationId: listTasks
+      parameters:
+        - name: status
+          in: query
+          description: Filter by task status
+          schema:
+            type: string
+            enum: [pending, running, completed, failed]
+        - name: limit
+          in: query
+          description: Maximum number of tasks to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /tasks/{taskId}:
+    get:
+      tags: [integration]
+      summary: Get task details
+      description: Get detailed information about a specific orchestrated task
+      operationId: getTask
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: string
+            pattern: '^task_[a-zA-Z0-9]{10}$'
+          example: task_1234567890
+      responses:
+        '200':
+          description: Task details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /memory:
+    post:
+      tags: [memory]
+      summary: Store data in memory
+      description: Store data in the persistent memory system with optional TTL
+      operationId: storeMemory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, value]
+              properties:
+                key:
+                  type: string
+                  description: Storage key
+                  example: "optimization-results/session-123"
+                value:
+                  description: Data to store (any JSON value)
+                  example: {"improvement": 173.0, "status": "validated"}
+                ttl:
+                  type: integer
+                  description: Time to live in seconds
+                  minimum: 1
+                  example: 3600
+                namespace:
+                  type: string
+                  description: Memory namespace
+                  default: default
+                  example: "cybernetic-optimization"
+      responses:
+        '201':
+          description: Data stored successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  stored:
+                    type: boolean
+                  expiresAt:
+                    type: string
+                    format: date-time
+
+  /memory/{key}:
+    get:
+      tags: [memory]
+      summary: Retrieve data from memory
+      description: Retrieve previously stored data from memory
+      operationId: getMemory
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: Storage key
+          schema:
+            type: string
+          example: "optimization-results/session-123"
+        - name: namespace
+          in: query
+          description: Memory namespace
+          schema:
+            type: string
+            default: default
+      responses:
+        '200':
+          description: Data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  value:
+                    description: Stored data
+                  timestamp:
+                    type: string
+                    format: date-time
+                  ttl:
+                    type: integer
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /security/scan:
+    post:
+      tags: [security]
+      summary: Security vulnerability scan
+      description: Scan code for security vulnerabilities and compliance issues
+      operationId: securityScan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target]
+              properties:
+                target:
+                  type: array
+                  items:
+                    type: string
+                  description: Files/directories to scan
+                  example: ["./src", "./scripts"]
+                depth:
+                  type: string
+                  enum: [surface, standard, deep]
+                  default: standard
+                  description: Scan depth level
+                compliance:
+                  type: array
+                  items:
+                    type: string
+                    enum: [owasp, pci, sox, hipaa]
+                  description: Compliance frameworks to check
+      responses:
+        '200':
+          description: Security scan completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityReport'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+  schemas:
+    OptimizationRequest:
+      type: object
+      required: [target]
+      properties:
+        target:
+          type: array
+          items:
+            type: string
+          description: Files or directories to optimize
+          example: ["./src", "./scripts"]
+        mode:
+          type: string
+          enum: [auto, manual, guided]
+          default: auto
+          description: Optimization approach
+        validation:
+          type: boolean
+          default: true
+          description: Enable validation testing
+        methodology:
+          type: string
+          enum: [sparc, custom]
+          default: sparc
+          description: Design methodology to use
+        options:
+          type: object
+          properties:
+            maxWorkers:
+              type: integer
+              minimum: 1
+              maximum: 32
+              default: 8
+              description: Maximum parallel workers
+            timeout:
+              type: integer
+              minimum: 30
+              maximum: 3600
+              default: 300
+              description: Operation timeout in seconds
+
+    OptimizationResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Optimization job ID
+          example: "opt_1234567890"
+        status:
+          type: string
+          enum: [running, completed, failed]
+          description: Optimization status
+        improvements:
+          type: object
+          properties:
+            overall:
+              type: number
+              description: Overall system improvement factor
+              example: 173.0
+            parallel:
+              type: number
+              description: Parallel processing improvement
+              example: 7.1
+            io:
+              type: number
+              description: I/O optimization improvement
+              example: 4355.4
+            pooling:
+              type: number
+              description: Resource pooling improvement
+              example: 39.6
+        validation:
+          type: object
+          properties:
+            passed:
+              type: boolean
+              description: Overall validation status
+            coverage:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: Test coverage percentage
+            security:
+              type: boolean
+              description: Security validation status
+        deployment:
+          type: object
+          properties:
+            ready:
+              type: boolean
+              description: Production deployment readiness
+            requirements:
+              type: array
+              items:
+                type: string
+              description: System requirements
+
+    AnalysisRequest:
+      type: object
+      required: [target]
+      properties:
+        target:
+          type: array
+          items:
+            type: string
+          description: Files or directories to analyze
+        depth:
+          type: string
+          enum: [shallow, deep, comprehensive]
+          default: comprehensive
+          description: Analysis depth
+        metrics:
+          type: array
+          items:
+            type: string
+            enum: [execution_time, memory_usage, io_operations, cpu_usage, throughput]
+          description: Specific metrics to collect
+        baseline:
+          type: boolean
+          default: false
+          description: Create baseline measurement
+
+    AnalysisResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Analysis job ID
+        bottlenecks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bottleneck'
+        metrics:
+          $ref: '#/components/schemas/PerformanceMetrics'
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+
+    Bottleneck:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [sequential, blocking, overhead, memory]
+          description: Bottleneck category
+        location:
+          type: string
+          description: File and line location
+          example: "./scripts/init.sh:163-182"
+        impact:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Performance impact percentage
+        description:
+          type: string
+          description: Human-readable description
+        solution:
+          type: string
+          description: Recommended solution
+
+    PerformanceMetrics:
+      type: object
+      properties:
+        executionTime:
+          type: number
+          description: Execution time in milliseconds
+        memoryUsage:
+          type: number
+          description: Memory usage in MB
+        cpuUsage:
+          type: number
+          description: CPU usage percentage
+        throughput:
+          type: number
+          description: Operations per second
+        latency:
+          type: number
+          description: Average latency in milliseconds
+
+    Recommendation:
+      type: object
+      properties:
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        type:
+          type: string
+          enum: [parallel_processing, io_optimization, resource_pooling, memory_optimization]
+        description:
+          type: string
+        estimatedImprovement:
+          type: number
+          description: Expected improvement factor
+
+    ValidationRequest:
+      type: object
+      required: [baseline, optimized]
+      properties:
+        baseline:
+          type: string
+          description: Baseline system path
+        optimized:
+          type: string
+          description: Optimized system path
+        tests:
+          type: array
+          items:
+            type: string
+            enum: [unit, integration, performance, security]
+          description: Test types to run
+        abTesting:
+          type: boolean
+          default: false
+          description: Enable A/B testing
+        production:
+          type: boolean
+          default: false
+          description: Production validation
+
+    ValidationResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Validation job ID
+        passed:
+          type: boolean
+          description: Overall validation status
+        improvements:
+          type: object
+          properties:
+            measured:
+              type: number
+              description: Actual measured improvement
+            claimed:
+              type: number
+              description: Claimed improvement
+            variance:
+              type: number
+              description: Variance from claimed improvement
+        tests:
+          type: object
+          description: Test results by category
+        security:
+          $ref: '#/components/schemas/SecurityResult'
+        deployment:
+          type: object
+          properties:
+            ready:
+              type: boolean
+            score:
+              type: integer
+              minimum: 0
+              maximum: 100
+
+    SPARCRequest:
+      type: object
+      required: [task]
+      properties:
+        task:
+          type: string
+          description: Task description for SPARC methodology
+        context:
+          type: object
+          properties:
+            problem:
+              type: string
+              description: Problem statement
+            constraints:
+              type: array
+              items:
+                type: string
+              description: Design constraints
+        options:
+          type: object
+          properties:
+            validation:
+              type: boolean
+              default: true
+            testing:
+              type: boolean
+              default: true
+
+    SPARCResult:
+      type: object
+      properties:
+        phase:
+          type: string
+          enum: [specification, pseudocode, architecture, refinement, completion]
+        output:
+          type: string
+          description: Phase output
+        nextPhase:
+          type: string
+          description: Recommended next phase
+        artifacts:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              content:
+                type: string
+
+    MetricsResult:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          description: Monitoring duration in seconds
+        metrics:
+          $ref: '#/components/schemas/PerformanceMetrics'
+        trends:
+          type: object
+          description: Performance trends over time
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              level:
+                type: string
+                enum: [info, warning, error, critical]
+              message:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: '^task_[a-zA-Z0-9]{10}$'
+          example: "task_1234567890"
+        description:
+          type: string
+          description: Task description
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        results:
+          type: object
+          description: Task results (when completed)
+        metrics:
+          $ref: '#/components/schemas/PerformanceMetrics'
+
+    SecurityResult:
+      type: object
+      properties:
+        passed:
+          type: boolean
+        vulnerabilities:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [injection, exposure, validation, access]
+              severity:
+                type: string
+                enum: [low, medium, high, critical]
+              description:
+                type: string
+              location:
+                type: string
+              solution:
+                type: string
+        compliance:
+          type: object
+          additionalProperties:
+            type: boolean
+          description: Compliance status by framework
+
+    SecurityReport:
+      type: object
+      properties:
+        id:
+          type: string
+        passed:
+          type: boolean
+        vulnerabilities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+              severity:
+                type: string
+                enum: [low, medium, high, critical]
+              description:
+                type: string
+              file:
+                type: string
+              line:
+                type: integer
+              recommendation:
+                type: string
+        compliance:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              passed:
+                type: boolean
+              score:
+                type: integer
+                minimum: 0
+                maximum: 100
+              requirements:
+                type: array
+                items:
+                  type: object
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        hasNext:
+          type: boolean
+        hasPrevious:
+          type: boolean
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "BAD_REQUEST"
+            message: "Invalid target specification"
+            details:
+              field: "target"
+              reason: "Array cannot be empty"
+
+    Unauthorized:
+      description: Unauthorized - invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "UNAUTHORIZED"
+            message: "Invalid API key"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "NOT_FOUND"
+            message: "Task not found"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "INTERNAL_ERROR"
+            message: "An unexpected error occurred"
+
+  examples:
+    OptimizationSuccess:
+      summary: Successful optimization with 173x improvement
+      value:
+        id: "opt_1234567890"
+        status: "completed"
+        improvements:
+          overall: 173.0
+          parallel: 7.1
+          io: 4355.4
+          pooling: 39.6
+        validation:
+          passed: true
+          coverage: 95
+          security: true
+        deployment:
+          ready: true
+          requirements: ["Node.js v14+", "Bash v4+", "Tmux"]
+
+    PerformanceBottleneck:
+      summary: Sequential spawning bottleneck identified
+      value:
+        type: "sequential"
+        location: "./scripts/worker-init.sh:163-182"
+        impact: 85.9
+        description: "Sequential worker spawning causes 60+ second delays"
+        solution: "Implement parallel spawning with xargs -P"

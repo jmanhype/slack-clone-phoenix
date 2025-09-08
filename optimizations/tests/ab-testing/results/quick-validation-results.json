@@ -1,0 +1,101 @@
+{
+  "validated": false,
+  "claimedImprovement": 216.9,
+  "actualImprovement": 173.0445297353782,
+  "improvementRange": [
+    103.53765881613323,
+    238.95061199257444
+  ],
+  "results": [
+    {
+      "config": {
+        "workers": 5,
+        "tasks": 25,
+        "name": "Small Scale"
+      },
+      "baseline": {
+        "totalTime": 12320.381709,
+        "startupTime": 2270.738333,
+        "taskTime": 10048.521499999999,
+        "peakMemory": 4936000,
+        "npxCalls": 30
+      },
+      "optimized": {
+        "totalTime": 118.99420800000007,
+        "startupTime": 33.00683299999946,
+        "taskTime": 84.9671670000007,
+        "peakMemory": 4878320,
+        "npxCalls": 5,
+        "poolEfficiency": 66.66666666666666
+      },
+      "improvements": {
+        "total": 103.53765881613323,
+        "startup": 68.7960075721302,
+        "tasks": 118.26358174328581,
+        "memory": 1.0118237425999115
+      }
+    },
+    {
+      "config": {
+        "workers": 10,
+        "tasks": 50,
+        "name": "Medium Scale"
+      },
+      "baseline": {
+        "totalTime": 24624.806417,
+        "startupTime": 4529.035083000001,
+        "taskTime": 20095.130749999997,
+        "peakMemory": 5038752,
+        "npxCalls": 60
+      },
+      "optimized": {
+        "totalTime": 139.40254199999617,
+        "startupTime": 41.93470800000068,
+        "taskTime": 97.22933399999602,
+        "peakMemory": 4902576,
+        "npxCalls": 10,
+        "poolEfficiency": 33.33333333333333
+      },
+      "improvements": {
+        "total": 176.6453183974269,
+        "startup": 108.00206556821445,
+        "tasks": 206.67765501716613,
+        "memory": 1.0277764179484419
+      }
+    },
+    {
+      "config": {
+        "workers": 20,
+        "tasks": 100,
+        "name": "Large Scale"
+      },
+      "baseline": {
+        "totalTime": 49279.163209000006,
+        "startupTime": 9065.962249999997,
+        "taskTime": 40212.87708399999,
+        "peakMemory": 4972864,
+        "npxCalls": 120
+      },
+      "optimized": {
+        "totalTime": 206.2315840000083,
+        "startupTime": 43.528458999993745,
+        "taskTime": 161.9950830000016,
+        "peakMemory": 5181480,
+        "npxCalls": 20,
+        "poolEfficiency": 25
+      },
+      "improvements": {
+        "total": 238.95061199257444,
+        "startup": 208.2766644691304,
+        "tasks": 248.2351707181112,
+        "memory": 0.9597381443139797
+      }
+    }
+  ],
+  "summary": {
+    "npxCallReduction": 175,
+    "avgPoolEfficiency": 41.666666666666664,
+    "avgStartupImprovement": 128.35824586982503,
+    "avgMemoryImprovement": 0.999779434954111
+  }
+}
