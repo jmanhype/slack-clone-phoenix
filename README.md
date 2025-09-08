@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚀 SPARC Development Environment with Claude Flow
 
 A fully configured, production-ready development environment powered by SPARC methodology and Claude Flow orchestration. Features 54 specialized AI agents, automated workflows, persistent memory, and comprehensive MCP integration for systematic Test-Driven Development.
@@ -928,7 +927,3 @@ This project is configured for use with Claude Code and Claude Flow.
 ---
 
 **Remember**: Claude Flow coordinates, Claude Code creates! 🚀
-=======
-# rehab-exercise-tracking
-Event-sourced rehabilitation exercise tracking system with Phoenix backend, Next.js dashboard, and React Native apps for physical therapists to monitor patient home exercise quality and adherence
->>>>>>> 8dfdb0a017bab3ca048e86fdc58ec7d713ee5b46
