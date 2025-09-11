@@ -1,0 +1,284 @@
+name: Security Scanning
+
+on:
+  schedule:
+    - cron: '0 2 * * 1' # Weekly on Monday at 2 AM UTC
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  ELIXIR_VERSION: "1.14"
+  OTP_VERSION: "25"
+
+jobs:
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ env.ELIXIR_VERSION }}
+        otp-version: ${{ env.OTP_VERSION }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+
+    - name: Install dependencies
+      run: |
+        mix deps.get
+        mix deps.compile
+
+    - name: Run Hex security audit
+      run: |
+        mix deps.audit
+        mix hex.audit
+
+    - name: OWASP Dependency Check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'slack-clone'
+        path: '.'
+        format: 'ALL'
+        args: >
+          --enableRetired
+          --enableExperimental
+          --nodeAuditSkipDevDependencies
+
+    - name: Upload SARIF results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: reports/dependency-check-report.sarif
+
+  code-scanning:
+    name: Code Security Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        queries: +security-and-quality
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+
+  semgrep-scan:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Semgrep
+      uses: semgrep/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/secrets
+          p/owasp-top-ten
+          p/elixir
+        generateSarif: "1"
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: semgrep.sarif
+      if: always()
+
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: TruffleHog OSS
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+    - name: GitLeaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE}}
+
+  container-scanning:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build Docker image
+      run: |
+        docker build -t slack-clone:security-scan .
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'slack-clone:security-scan'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Run Snyk container scan
+      uses: snyk/actions/docker@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: slack-clone:security-scan
+        args: --severity-threshold=high --file=Dockerfile
+
+  infrastructure-scan:
+    name: Infrastructure Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Checkov
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: .
+        framework: dockerfile,kubernetes,github_actions
+        output_format: sarif
+        output_file_path: checkov.sarif
+
+    - name: Upload Checkov results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: checkov.sarif
+      if: always()
+
+    - name: Scan Kubernetes manifests with Kubesec
+      run: |
+        if [ -d "k8s" ]; then
+          docker run --rm -v ${PWD}:/work kubesec/kubesec:latest scan /work/k8s/*.yaml
+        fi
+
+  security-policy-check:
+    name: Security Policy Compliance
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check security policy files
+      run: |
+        echo "Checking security policy compliance..."
+        
+        # Check for security.md
+        if [ ! -f "SECURITY.md" ]; then
+          echo "⚠️ SECURITY.md file not found"
+          echo "security_md_missing=true" >> $GITHUB_ENV
+        fi
+        
+        # Check for dependabot config
+        if [ ! -f ".github/dependabot.yml" ]; then
+          echo "⚠️ Dependabot configuration not found"
+          echo "dependabot_missing=true" >> $GITHUB_ENV
+        fi
+        
+        # Check for code scanning config
+        if [ ! -f ".github/workflows/codeql.yml" ] && [ ! -f ".github/workflows/security.yml" ]; then
+          echo "⚠️ Code scanning configuration not found"
+          echo "code_scanning_missing=true" >> $GITHUB_ENV
+        fi
+
+    - name: Generate security report
+      run: |
+        cat > security-report.md << EOF
+        # Security Scan Report
+        
+        ## Summary
+        - Dependency Scan: ${{ jobs.dependency-scan.result || 'Running' }}
+        - Code Scanning: ${{ jobs.code-scanning.result || 'Running' }}
+        - Secret Scanning: ${{ jobs.secret-scanning.result || 'Running' }}
+        - Container Scanning: ${{ jobs.container-scanning.result || 'Running' }}
+        - Infrastructure Scan: ${{ jobs.infrastructure-scan.result || 'Running' }}
+        
+        ## Policy Compliance
+        - Security Policy: ${{ env.security_md_missing == 'true' && '❌ Missing' || '✅ Present' }}
+        - Dependabot: ${{ env.dependabot_missing == 'true' && '❌ Missing' || '✅ Configured' }}
+        - Code Scanning: ${{ env.code_scanning_missing == 'true' && '❌ Missing' || '✅ Configured' }}
+        
+        Generated on: $(date -u)
+        EOF
+
+    - name: Upload security report
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: security-report.md
+
+  notification:
+    name: Security Notification
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, code-scanning, semgrep-scan, secret-scanning, container-scanning, infrastructure-scan]
+    if: failure() || github.event_name == 'schedule'
+    
+    steps:
+    - name: Notify security team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ needs.dependency-scan.result == 'success' && needs.code-scanning.result == 'success' && needs.semgrep-scan.result == 'success' && needs.secret-scanning.result == 'success' && needs.container-scanning.result == 'success' && needs.infrastructure-scan.result == 'success' && 'success' || 'failure' }}
+        channel: '#security-alerts'
+        webhook_url: ${{ secrets.SECURITY_SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+        text: |
+          Security scan completed with status: ${{ needs.dependency-scan.result == 'success' && needs.code-scanning.result == 'success' && needs.semgrep-scan.result == 'success' && needs.secret-scanning.result == 'success' && needs.container-scanning.result == 'success' && needs.infrastructure-scan.result == 'success' && '✅ All checks passed' || '❌ Some checks failed' }}
+          
+          Results:
+          • Dependency Scan: ${{ needs.dependency-scan.result }}
+          • Code Scanning: ${{ needs.code-scanning.result }}
+          • Semgrep: ${{ needs.semgrep-scan.result }}
+          • Secret Scanning: ${{ needs.secret-scanning.result }}
+          • Container Scanning: ${{ needs.container-scanning.result }}
+          • Infrastructure Scan: ${{ needs.infrastructure-scan.result }}

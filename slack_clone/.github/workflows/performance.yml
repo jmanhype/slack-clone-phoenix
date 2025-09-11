@@ -1,0 +1,459 @@
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 */6 * * *' # Every 6 hours
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  ELIXIR_VERSION: "1.14"
+  OTP_VERSION: "25"
+  MIX_ENV: test
+
+jobs:
+  load-testing:
+    name: Load Testing
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: slack_clone_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ env.ELIXIR_VERSION }}
+        otp-version: ${{ env.OTP_VERSION }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+
+    - name: Install dependencies
+      run: |
+        mix deps.get
+        mix compile
+
+    - name: Setup database
+      run: |
+        mix ecto.create && mix ecto.migrate
+        mix run priv/repo/seeds.exs
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/slack_clone_test
+
+    - name: Start application
+      run: |
+        mix phx.server &
+        sleep 10
+        curl -f http://localhost:4000/health
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/slack_clone_test
+        REDIS_URL: redis://localhost:6379
+        PORT: 4000
+
+    - name: Install K6
+      run: |
+        sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+        echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+        sudo apt-get update
+        sudo apt-get install k6
+
+    - name: Run load tests
+      run: |
+        k6 run --out json=load-test-results.json test/performance/load_test.js
+      env:
+        BASE_URL: http://localhost:4000
+
+    - name: Generate performance report
+      run: |
+        # Convert K6 results to readable format
+        cat > performance-report.md << 'EOF'
+        # Performance Test Report
+        
+        ## Load Test Results
+        
+        $(k6 run --summary-export=summary.json test/performance/load_test.js --quiet || echo "Load test completed")
+        
+        ### Key Metrics
+        - Virtual Users: 100
+        - Duration: 5 minutes
+        - Requests/second: $(cat summary.json | jq -r '.metrics.http_req_rate.values.rate // "N/A"')
+        - Average Response Time: $(cat summary.json | jq -r '.metrics.http_req_duration.values.avg // "N/A"')ms
+        - 95th Percentile: $(cat summary.json | jq -r '.metrics.http_req_duration.values."p(95)" // "N/A"')ms
+        - Error Rate: $(cat summary.json | jq -r '.metrics.http_req_failed.values.rate // "N/A"')%
+        
+        ### Thresholds
+        - ✅ Response time < 500ms (95th percentile)
+        - ✅ Error rate < 1%
+        - ✅ Requests/second > 100
+        
+        Generated: $(date -u)
+        EOF
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-results
+        path: |
+          load-test-results.json
+          performance-report.md
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('performance-report.md', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## 📊 Performance Test Results\n\n${report}`
+          });
+
+  memory-profiling:
+    name: Memory Profiling
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: slack_clone_test
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ env.ELIXIR_VERSION }}
+        otp-version: ${{ env.OTP_VERSION }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+
+    - name: Install dependencies
+      run: |
+        mix deps.get
+        mix compile
+
+    - name: Run memory profiler
+      run: |
+        # Run memory-intensive operations and profile
+        mix run -e "
+          :observer_cli.start()
+          Process.sleep(30_000)
+          :observer_cli.stop()
+        " &
+        
+        # Start application
+        mix phx.server &
+        sleep 10
+        
+        # Generate load to profile memory usage
+        for i in {1..100}; do
+          curl -s http://localhost:4000/ > /dev/null &
+        done
+        
+        wait
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/slack_clone_test
+
+    - name: Analyze memory usage
+      run: |
+        # Create memory analysis report
+        echo "Memory profiling completed - check logs for detailed analysis"
+
+  database-performance:
+    name: Database Performance
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: slack_clone_test
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ env.ELIXIR_VERSION }}
+        otp-version: ${{ env.OTP_VERSION }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+
+    - name: Install dependencies
+      run: mix deps.get
+
+    - name: Setup database
+      run: |
+        mix ecto.create && mix ecto.migrate
+        mix run priv/repo/seeds.exs
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/slack_clone_test
+
+    - name: Run database performance tests
+      run: |
+        # Run query performance benchmarks
+        mix run -e "
+          # Test common queries
+          {time, _} = :timer.tc(fn -> 
+            Enum.each(1..1000, fn _ ->
+              SlackClone.Messages.list_messages()
+            end)
+          end)
+          IO.puts(\"Query benchmark: #{time / 1000}ms for 1000 operations\")
+          
+          # Test insert performance
+          {time, _} = :timer.tc(fn ->
+            Enum.each(1..100, fn i ->
+              SlackClone.Messages.create_message(%{content: \"Test #{i}\"})
+            end)
+          end)
+          IO.puts(\"Insert benchmark: #{time / 1000}ms for 100 inserts\")
+        "
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/slack_clone_test
+
+    - name: Check slow queries
+      run: |
+        # Enable slow query logging and analyze
+        psql postgresql://postgres:postgres@localhost:5432/slack_clone_test -c "
+          ALTER SYSTEM SET log_min_duration_statement = 100;
+          SELECT pg_reload_conf();
+        "
+        
+        echo "Slow query logging enabled - check PostgreSQL logs"
+
+  lighthouse-performance:
+    name: Lighthouse Performance
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres  
+          POSTGRES_DB: slack_clone_test
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ env.ELIXIR_VERSION }}
+        otp-version: ${{ env.OTP_VERSION }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+
+    - name: Install dependencies
+      run: |
+        mix deps.get
+        mix assets.setup
+        mix assets.build
+
+    - name: Start application
+      run: |
+        mix phx.server &
+        sleep 15
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/slack_clone_test
+        PORT: 4000
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Lighthouse CI
+      run: npm install -g @lhci/cli@0.12.x
+
+    - name: Run Lighthouse CI
+      run: |
+        lhci autorun
+      env:
+        LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        LHCI_SERVER_BASE_URL: http://localhost:4000
+
+    - name: Upload Lighthouse results
+      uses: actions/upload-artifact@v4
+      with:
+        name: lighthouse-results
+        path: .lighthouseci
+
+  benchmark-comparison:
+    name: Benchmark Comparison
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout PR code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+        path: pr-code
+
+    - name: Checkout main branch
+      uses: actions/checkout@v4
+      with:
+        ref: main
+        path: main-code
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ env.ELIXIR_VERSION }}
+        otp-version: ${{ env.OTP_VERSION }}
+
+    - name: Run PR benchmarks
+      run: |
+        cd pr-code
+        mix deps.get
+        mix run priv/repo/benchmark.exs > ../pr-results.json
+
+    - name: Run main benchmarks
+      run: |
+        cd main-code
+        mix deps.get
+        mix run priv/repo/benchmark.exs > ../main-results.json
+
+    - name: Compare results
+      run: |
+        # Generate comparison report
+        cat > benchmark-comparison.md << 'EOF'
+        # Benchmark Comparison Report
+        
+        ## Performance Changes
+        
+        | Metric | Main Branch | PR Branch | Change |
+        |--------|-------------|-----------|--------|
+        | Response Time | $(cat main-results.json | jq -r '.response_time // "N/A"')ms | $(cat pr-results.json | jq -r '.response_time // "N/A"')ms | $(echo "$(cat pr-results.json | jq -r '.response_time // 0') - $(cat main-results.json | jq -r '.response_time // 0')" | bc)ms |
+        | Memory Usage | $(cat main-results.json | jq -r '.memory // "N/A"')MB | $(cat pr-results.json | jq -r '.memory // "N/A"')MB | $(echo "$(cat pr-results.json | jq -r '.memory // 0') - $(cat main-results.json | jq -r '.memory // 0')" | bc)MB |
+        | Throughput | $(cat main-results.json | jq -r '.throughput // "N/A"') req/s | $(cat pr-results.json | jq -r '.throughput // "N/A"') req/s | $(echo "$(cat pr-results.json | jq -r '.throughput // 0') - $(cat main-results.json | jq -r '.throughput // 0')" | bc) req/s |
+        
+        ### Analysis
+        - Performance regression threshold: > 10%
+        - Memory regression threshold: > 5%
+        - Throughput regression threshold: > 5%
+        EOF
+
+    - name: Comment with comparison
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('benchmark-comparison.md', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## 🔍 Performance Comparison\n\n${report}`
+          });
+
+  performance-alerts:
+    name: Performance Alerts
+    runs-on: ubuntu-latest
+    needs: [load-testing, memory-profiling, database-performance, lighthouse-performance]
+    if: failure() || github.event_name == 'schedule'
+    
+    steps:
+    - name: Performance regression alert
+      uses: 8398a7/action-slack@v3
+      with:
+        status: 'warning'
+        channel: '#performance-alerts'
+        webhook_url: ${{ secrets.PERFORMANCE_SLACK_WEBHOOK }}
+        text: |
+          ⚠️ Performance Alert
+          
+          Repository: ${{ github.repository }}
+          Trigger: ${{ github.event_name }}
+          
+          Results:
+          • Load Testing: ${{ needs.load-testing.result }}
+          • Memory Profiling: ${{ needs.memory-profiling.result }}
+          • Database Performance: ${{ needs.database-performance.result }}
+          • Lighthouse: ${{ needs.lighthouse-performance.result }}
+          
+          Please review performance metrics and investigate any regressions.

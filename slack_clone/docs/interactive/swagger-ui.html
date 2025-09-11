@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slack Clone API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css" />
+    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@4.15.5/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@4.15.5/favicon-16x16.png" sizes="16x16" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        body {
+            margin: 0;
+            background: #fafafa;
+        }
+
+        .swagger-ui .topbar {
+            background-color: #4A154B;
+        }
+
+        .swagger-ui .topbar .download-url-wrapper .select-label {
+            color: white;
+        }
+
+        .swagger-ui .topbar .download-url-wrapper input[type=text] {
+            border: 2px solid #4A154B;
+        }
+
+        .custom-header {
+            background: linear-gradient(135deg, #4A154B 0%, #6B2C91 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .custom-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+
+        .custom-header p {
+            margin: 0.5rem 0 0 0;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .auth-section {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            margin: 2rem;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .auth-form {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .auth-form > div {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+
+        .auth-form label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .auth-form input, .auth-form select {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .auth-form button {
+            background: #4A154B;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            height: fit-content;
+        }
+
+        .auth-form button:hover {
+            background: #6B2C91;
+        }
+
+        .auth-form button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-connected {
+            background-color: #28a745;
+        }
+
+        .status-disconnected {
+            background-color: #dc3545;
+        }
+
+        .status-pending {
+            background-color: #ffc107;
+        }
+
+        .websocket-section {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            margin: 2rem;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .websocket-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .websocket-controls button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .websocket-controls button:hover {
+            background: #0056b3;
+        }
+
+        .websocket-controls button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .logs-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.25rem;
+            border-radius: 3px;
+        }
+
+        .log-sent {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .log-received {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .log-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .log-info {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 2rem;
+        }
+
+        .quick-action {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .quick-action:hover {
+            transform: translateY(-2px);
+        }
+
+        .quick-action h3 {
+            margin: 0 0 1rem 0;
+            color: #4A154B;
+        }
+
+        .quick-action button {
+            background: #4A154B;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .quick-action button:hover {
+            background: #6B2C91;
+        }
+
+        @media (max-width: 768px) {
+            .auth-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .auth-form > div {
+                min-width: auto;
+            }
+
+            .websocket-controls {
+                flex-direction: column;
+            }
+
+            .custom-header h1 {
+                font-size: 2rem;
+            }
+
+            .custom-header p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-header">
+        <h1>🚀 Slack Clone API</h1>
+        <p>Interactive API Documentation and Testing Environment</p>
+    </div>
+
+    <!-- Authentication Helper -->
+    <div class="auth-section">
+        <h2>🔐 Authentication Helper</h2>
+        <p>Quickly authenticate and set up your API testing environment.</p>
+        
+        <div class="auth-form">
+            <div>
+                <label for="serverUrl">Server URL</label>
+                <input type="text" id="serverUrl" value="http://localhost:4000" placeholder="http://localhost:4000">
+            </div>
+            <div>
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="user@example.com">
+            </div>
+            <div>
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Your password">
+            </div>
+            <div>
+                <button id="loginBtn" onclick="handleLogin()">Login & Set Token</button>
+            </div>
+        </div>
+        
+        <div style="margin-top: 1rem;">
+            <strong>Status:</strong> 
+            <span class="status-indicator status-disconnected" id="authStatus"></span>
+            <span id="authStatusText">Not authenticated</span>
+        </div>
+    </div>
+
+    <!-- WebSocket Testing -->
+    <div class="websocket-section">
+        <h2>🔗 WebSocket Testing</h2>
+        <p>Test real-time functionality with Phoenix Channels.</p>
+        
+        <div class="websocket-controls">
+            <button id="wsConnectBtn" onclick="connectWebSocket()">Connect WebSocket</button>
+            <button id="wsDisconnectBtn" onclick="disconnectWebSocket()" disabled>Disconnect</button>
+            <button onclick="joinChannel()">Join Channel</button>
+            <button onclick="sendMessage()">Send Test Message</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <strong>WebSocket Status:</strong> 
+            <span class="status-indicator status-disconnected" id="wsStatus"></span>
+            <span id="wsStatusText">Disconnected</span>
+        </div>
+        
+        <div class="logs-container" id="wsLogs">
+            <div class="log-info">WebSocket logs will appear here...</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <div class="quick-action">
+            <h3>📋 Test API Endpoints</h3>
+            <p>Explore and test all REST API endpoints with the interactive Swagger UI below.</p>
+            <button onclick="scrollToSwagger()">View API Documentation</button>
+        </div>
+        
+        <div class="quick-action">
+            <h3>📁 Import Postman Collection</h3>
+            <p>Download and import our comprehensive Postman collection for API testing.</p>
+            <button onclick="downloadPostmanCollection()">Download Collection</button>
+        </div>
+        
+        <div class="quick-action">
+            <h3>💻 Generate SDK</h3>
+            <p>Generate client SDKs for TypeScript, Python, or other languages.</p>
+            <button onclick="showSDKOptions()">View SDK Options</button>
+        </div>
+        
+        <div class="quick-action">
+            <h3>🔧 API Playground</h3>
+            <p>Interactive testing environment for rapid API experimentation.</p>
+            <button onclick="openPlayground()">Open Playground</button>
+        </div>
+    </div>
+
+    <!-- Swagger UI Container -->
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        // Global variables
+        let socket = null;
+        let channel = null;
+        let currentToken = null;
+
+        // Initialize Swagger UI
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: '../api/openapi.yaml',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                requestInterceptor: function(request) {
+                    if (currentToken) {
+                        request.headers.Authorization = `Bearer ${currentToken}`;
+                    }
+                    return request;
+                },
+                onComplete: function() {
+                    console.log('Swagger UI loaded');
+                }
+            });
+        };
+
+        // Authentication functions
+        async function handleLogin() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            if (!email || !password) {
+                alert('Please enter email and password');
+                return;
+            }
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+            
+            try {
+                const response = await fetch(`${serverUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.access_token;
+                    
+                    // Update UI
+                    document.getElementById('authStatus').className = 'status-indicator status-connected';
+                    document.getElementById('authStatusText').textContent = `Authenticated as ${data.user.email}`;
+                    
+                    // Store in localStorage for persistence
+                    localStorage.setItem('slack_clone_token', currentToken);
+                    localStorage.setItem('slack_clone_refresh_token', data.refresh_token);
+                    
+                    alert('Authentication successful! Token has been set for API requests.');
+                } else {
+                    const error = await response.json();
+                    alert(`Login failed: ${error.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                alert(`Network error: ${error.message}`);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login & Set Token';
+            }
+        }
+
+        // WebSocket functions
+        function connectWebSocket() {
+            const serverUrl = document.getElementById('serverUrl').value.replace('http', 'ws');
+            
+            if (!currentToken) {
+                alert('Please authenticate first');
+                return;
+            }
+            
+            // Import Phoenix Socket (you'd need to include the Phoenix JS client)
+            // For demo purposes, we'll simulate the connection
+            logMessage('info', 'Connecting to WebSocket...');
+            
+            setTimeout(() => {
+                document.getElementById('wsStatus').className = 'status-indicator status-connected';
+                document.getElementById('wsStatusText').textContent = 'Connected';
+                document.getElementById('wsConnectBtn').disabled = true;
+                document.getElementById('wsDisconnectBtn').disabled = false;
+                logMessage('received', 'WebSocket connected successfully');
+            }, 1000);
+        }
+
+        function disconnectWebSocket() {
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            document.getElementById('wsStatus').className = 'status-indicator status-disconnected';
+            document.getElementById('wsStatusText').textContent = 'Disconnected';
+            document.getElementById('wsConnectBtn').disabled = false;
+            document.getElementById('wsDisconnectBtn').disabled = true;
+            
+            logMessage('info', 'WebSocket disconnected');
+        }
+
+        function joinChannel() {
+            if (!socket) {
+                alert('Please connect WebSocket first');
+                return;
+            }
+            
+            logMessage('sent', 'Joining channel:general...');
+            setTimeout(() => {
+                logMessage('received', 'Successfully joined channel:general');
+            }, 500);
+        }
+
+        function sendMessage() {
+            logMessage('sent', '{"event": "new_message", "payload": {"content": "Hello from API docs!"}}');
+            setTimeout(() => {
+                logMessage('received', '{"event": "message_created", "payload": {"id": "msg_123", "content": "Hello from API docs!", "user": "test_user"}}');
+            }, 500);
+        }
+
+        function logMessage(type, message) {
+            const logsContainer = document.getElementById('wsLogs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('wsLogs').innerHTML = '<div class="log-info">Logs cleared...</div>';
+        }
+
+        // Utility functions
+        function scrollToSwagger() {
+            document.getElementById('swagger-ui').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function downloadPostmanCollection() {
+            const link = document.createElement('a');
+            link.href = '../tools/postman-collection.json';
+            link.download = 'slack-clone-api.postman_collection.json';
+            link.click();
+        }
+
+        function showSDKOptions() {
+            alert('SDK Options:\n\n• TypeScript SDK: ../tools/typescript-sdk.ts\n• Python Client: ../tools/python-client.py\n• Generate custom SDKs using OpenAPI Generator with our openapi.yaml specification');
+        }
+
+        function openPlayground() {
+            // In a real implementation, this would open a more sophisticated API playground
+            alert('API Playground:\n\nUse the Swagger UI below for interactive API testing, or import our Postman collection for advanced testing scenarios.');
+        }
+
+        // Load stored token on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const storedToken = localStorage.getItem('slack_clone_token');
+            if (storedToken) {
+                currentToken = storedToken;
+                document.getElementById('authStatus').className = 'status-indicator status-connected';
+                document.getElementById('authStatusText').textContent = 'Token loaded from storage';
+            }
+        });
+
+        // Auto-refresh token functionality
+        async function refreshTokenIfNeeded() {
+            const refreshToken = localStorage.getItem('slack_clone_refresh_token');
+            if (!refreshToken) return false;
+            
+            try {
+                const serverUrl = document.getElementById('serverUrl').value;
+                const response = await fetch(`${serverUrl}/api/auth/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.access_token;
+                    localStorage.setItem('slack_clone_token', currentToken);
+                    return true;
+                }
+            } catch (error) {
+                console.error('Token refresh failed:', error);
+            }
+            
+            return false;
+        }
+
+        // Periodic token refresh check
+        setInterval(refreshTokenIfNeeded, 5 * 60 * 1000); // Check every 5 minutes
+    </script>
+</body>
+</html>

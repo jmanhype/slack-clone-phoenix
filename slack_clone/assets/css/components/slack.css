@@ -1,0 +1,226 @@
+/* Slack Clone Specific Styles */
+
+/* Custom CSS Variables for Slack Colors */
+:root {
+  /* Primary Slack Colors */
+  --slack-purple: #4A154B;
+  --slack-dark-purple: #3E1242;
+  --slack-light-purple: #ECE8F1;
+  --slack-green: #2EB67D;
+  --slack-blue: #1264A3;
+  --slack-red: #E01E5A;
+  --slack-orange: #FF6B35;
+  --slack-yellow: #FFD23F;
+  
+  /* Background Colors */
+  --slack-bg-primary: #FFFFFF;
+  --slack-bg-secondary: #F8F8F8;
+  --slack-bg-tertiary: #F4F4F4;
+  --slack-bg-sidebar: #3F0E40;
+  --slack-bg-channel: #1A0B1E;
+  --slack-bg-hover: rgba(255,255,255,0.1);
+  --slack-bg-active: rgba(255,255,255,0.2);
+  
+  /* Text Colors */
+  --slack-text-primary: #1D1C1D;
+  --slack-text-secondary: #616061;
+  --slack-text-muted: #868686;
+  --slack-text-on-dark: #FFFFFF;
+  --slack-text-on-dark-muted: rgba(255,255,255,0.7);
+  
+  /* Border Colors */
+  --slack-border: #E1E1E1;
+  --slack-border-dark: rgba(255,255,255,0.13);
+  --slack-border-focus: #1264A3;
+  
+  /* Shadow */
+  --slack-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  --slack-shadow-lg: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* Dark Mode Variables */
+[data-theme="dark"] {
+  --slack-bg-primary: #1A1D29;
+  --slack-bg-secondary: #232529;
+  --slack-bg-tertiary: #2C2D33;
+  --slack-bg-sidebar: #19171D;
+  --slack-bg-channel: #0F0E13;
+  --slack-bg-hover: rgba(255,255,255,0.04);
+  --slack-bg-active: rgba(255,255,255,0.08);
+  
+  --slack-text-primary: #D1D2D3;
+  --slack-text-secondary: #B9B9B9;
+  --slack-text-muted: #868686;
+  
+  --slack-border: #3A3B3C;
+  --slack-border-dark: rgba(255,255,255,0.13);
+}
+
+/* Custom Animations */
+@keyframes slack-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes slack-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slack-slide-right {
+  from { transform: translateX(-8px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.slack-pulse { animation: slack-pulse 1.5s infinite; }
+.slack-fade-in { animation: slack-fade-in 0.2s ease-out; }
+.slack-slide-right { animation: slack-slide-right 0.15s ease-out; }
+
+/* Custom Scrollbar */
+.slack-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.3) transparent;
+}
+
+.slack-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.slack-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.slack-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3);
+  border-radius: 3px;
+}
+
+.slack-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.5);
+}
+
+/* Focus States */
+.slack-focus:focus {
+  outline: 2px solid var(--slack-border-focus);
+  outline-offset: 1px;
+}
+
+/* Custom Typography */
+.slack-text-xs { font-size: 0.75rem; line-height: 1rem; }
+.slack-text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.slack-text-base { font-size: 0.9375rem; line-height: 1.375rem; }
+.slack-text-lg { font-size: 1.125rem; line-height: 1.5rem; }
+
+/* Message Timestamp Hover Effect */
+.message-timestamp {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.message-container:hover .message-timestamp {
+  opacity: 1;
+}
+
+/* Channel List Hover Effects */
+.channel-item {
+  transition: all 0.15s ease;
+}
+
+.channel-item:hover {
+  background-color: var(--slack-bg-hover);
+  color: var(--slack-text-on-dark);
+}
+
+.channel-item.active {
+  background-color: var(--slack-blue);
+  color: white;
+}
+
+/* Typing Indicator */
+.typing-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--slack-text-secondary);
+  animation: slack-pulse 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Emoji Reactions */
+.reaction-button {
+  transition: all 0.15s ease;
+  border: 1px solid var(--slack-border);
+}
+
+.reaction-button:hover {
+  border-color: var(--slack-blue);
+  background-color: rgba(18, 100, 163, 0.1);
+}
+
+.reaction-button.reacted {
+  background-color: rgba(18, 100, 163, 0.15);
+  border-color: var(--slack-blue);
+  color: var(--slack-blue);
+}
+
+/* Thread Indicator */
+.thread-indicator {
+  border-left: 2px solid var(--slack-border);
+  margin-left: 2.5rem;
+  padding-left: 1rem;
+}
+
+/* Presence Indicators */
+.presence-active { background-color: var(--slack-green); }
+.presence-away { background-color: var(--slack-yellow); }
+.presence-offline { background-color: var(--slack-text-muted); }
+
+/* Mobile Responsive Utilities */
+@media (max-width: 768px) {
+  .mobile-hidden { display: none !important; }
+  .mobile-full { width: 100% !important; }
+}
+
+/* Loading Skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--slack-bg-tertiary) 0%,
+    rgba(255,255,255,0.8) 50%,
+    var(--slack-bg-tertiary) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Custom Utilities */
+.text-slack-purple { color: var(--slack-purple); }
+.text-slack-green { color: var(--slack-green); }
+.text-slack-blue { color: var(--slack-blue); }
+.text-slack-red { color: var(--slack-red); }
+
+.bg-slack-purple { background-color: var(--slack-purple); }
+.bg-slack-sidebar { background-color: var(--slack-bg-sidebar); }
+.bg-slack-channel { background-color: var(--slack-bg-channel); }
+.bg-slack-hover { background-color: var(--slack-bg-hover); }
+
+.border-slack { border-color: var(--slack-border); }
+.border-slack-dark { border-color: var(--slack-border-dark); }
+
+/* Compact Mode */
+.compact .message-container {
+  padding: 0.25rem 1rem;
+}
+
+.compact .avatar {
+  width: 1.5rem;
+  height: 1.5rem;
+}

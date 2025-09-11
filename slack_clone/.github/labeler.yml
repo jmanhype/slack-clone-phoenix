@@ -1,0 +1,98 @@
+# GitHub Labeler Configuration
+# Automatically labels PRs based on file patterns
+
+# Backend/Elixir changes
+'elixir':
+  - 'lib/**/*.ex'
+  - 'lib/**/*.exs'
+  - 'mix.exs'
+  - 'mix.lock'
+  - 'config/**/*.exs'
+
+# Database changes
+'database':
+  - 'priv/repo/migrations/**/*.exs'
+  - 'priv/repo/seeds.exs'
+
+# Tests
+'tests':
+  - 'test/**/*.ex'
+  - 'test/**/*.exs'
+
+# Frontend/Assets
+'frontend':
+  - 'assets/**/*'
+  - 'priv/static/**/*'
+
+# Documentation
+'documentation':
+  - '*.md'
+  - 'docs/**/*'
+  - 'README.*'
+
+# CI/CD
+'ci/cd':
+  - '.github/**/*'
+  - 'Dockerfile*'
+  - 'docker-compose*.yml'
+  - '.dockerignore'
+
+# Security
+'security':
+  - 'SECURITY.md'
+  - '.github/workflows/security.yml'
+  - 'lib/**/security/**/*'
+
+# Dependencies
+'dependencies':
+  - 'mix.lock'
+  - 'assets/package*.json'
+  - '.github/dependabot.yml'
+
+# Configuration
+'config':
+  - 'config/**/*.exs'
+  - '.env*'
+  - '*.yml'
+  - '*.yaml'
+  - '*.toml'
+
+# Performance
+'performance':
+  - 'priv/repo/benchmark.exs'
+  - 'test/performance/**/*'
+  - '.github/workflows/performance.yml'
+
+# Infrastructure/Kubernetes
+'infrastructure':
+  - 'k8s/**/*'
+  - 'charts/**/*'
+  - 'terraform/**/*'
+
+# API changes
+'api':
+  - 'lib/**/*_controller.ex'
+  - 'lib/**/router.ex'
+  - 'lib/**/views/**/*.ex'
+
+# Monitoring/Observability
+'monitoring':
+  - 'lib/**/telemetry/**/*'
+  - 'config/telemetry.exs'
+  - 'priv/grafana/**/*'
+
+# Size labels based on lines changed
+'size/xs':
+  - changed-files: 1-5
+
+'size/s':
+  - changed-files: 6-15
+
+'size/m':
+  - changed-files: 16-50
+
+'size/l':
+  - changed-files: 51-150
+
+'size/xl':
+  - changed-files: 151+

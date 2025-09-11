@@ -1,0 +1,40 @@
+# Global owners
+* @slack-clone-maintainers
+
+# GitHub Actions and CI/CD workflows
+/.github/ @devops-team @security-team
+
+# Dockerfiles and deployment configs
+/Dockerfile* @devops-team
+/k8s/ @devops-team @platform-team
+/docker-compose* @devops-team
+
+# Elixir application code
+/lib/ @backend-team @slack-clone-maintainers
+/config/ @backend-team @devops-team
+
+# Database and migrations  
+/priv/repo/migrations/ @backend-team @database-team
+
+# Frontend assets
+/assets/ @frontend-team
+
+# Tests
+/test/ @backend-team @qa-team
+
+# Security-related files
+/SECURITY.md @security-team
+/.github/workflows/security.yml @security-team
+/.github/dependabot.yml @security-team @devops-team
+
+# Documentation
+/README.md @documentation-team @slack-clone-maintainers
+/docs/ @documentation-team
+
+# Performance and monitoring
+/.github/workflows/performance.yml @performance-team @devops-team
+/priv/repo/benchmark.exs @performance-team
+
+# Release management
+/.github/workflows/release.yml @release-managers @devops-team
+/CHANGELOG.md @release-managers

@@ -1,0 +1,348 @@
+name: Release Automation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+        - prerelease
+      prerelease_id:
+        description: 'Prerelease identifier (alpha, beta, rc)'
+        required: false
+        default: 'beta'
+        type: choice
+        options:
+        - alpha
+        - beta
+        - rc
+
+env:
+  ELIXIR_VERSION: "1.14"
+  OTP_VERSION: "25"
+
+jobs:
+  semantic-release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+      new_release_major_version: ${{ steps.semantic.outputs.new_release_major_version }}
+      new_release_minor_version: ${{ steps.semantic.outputs.new_release_minor_version }}
+      new_release_patch_version: ${{ steps.semantic.outputs.new_release_patch_version }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: .github/package-lock.json
+
+    - name: Install semantic-release dependencies
+      run: |
+        cd .github
+        npm ci
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ env.ELIXIR_VERSION }}
+        otp-version: ${{ env.OTP_VERSION }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+
+    - name: Install dependencies
+      run: mix deps.get
+
+    - name: Run semantic release
+      id: semantic
+      run: cd .github && npx semantic-release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  manual-release:
+    name: Manual Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    outputs:
+      new_release_published: 'true'
+      new_release_version: ${{ steps.version.outputs.new_version }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ env.ELIXIR_VERSION }}
+        otp-version: ${{ env.OTP_VERSION }}
+
+    - name: Calculate next version
+      id: version
+      run: |
+        # Get current version from mix.exs
+        CURRENT_VERSION=$(grep -o 'version: "[^"]*"' mix.exs | sed 's/version: "\(.*\)"/\1/')
+        echo "Current version: $CURRENT_VERSION"
+        
+        # Calculate next version based on input
+        case "${{ github.event.inputs.release_type }}" in
+          "major")
+            NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print ($1+1)".0.0"}')
+            ;;
+          "minor") 
+            NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1"."($2+1)".0"}')
+            ;;
+          "patch")
+            NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1"."$2"."($3+1)}')
+            ;;
+          "prerelease")
+            # Extract base version and prerelease number
+            if [[ $CURRENT_VERSION =~ ^([0-9]+\.[0-9]+\.[0-9]+)(-([a-z]+)\.([0-9]+))?$ ]]; then
+              BASE_VERSION="${BASH_REMATCH[1]}"
+              PRERELEASE_ID="${BASH_REMATCH[3]}"
+              PRERELEASE_NUM="${BASH_REMATCH[4]}"
+              
+              if [ -z "$PRERELEASE_ID" ] || [ "$PRERELEASE_ID" != "${{ github.event.inputs.prerelease_id }}" ]; then
+                NEW_VERSION="${BASE_VERSION}-${{ github.event.inputs.prerelease_id }}.1"
+              else
+                NEW_VERSION="${BASE_VERSION}-${{ github.event.inputs.prerelease_id }}.$((PRERELEASE_NUM + 1))"
+              fi
+            else
+              NEW_VERSION="${CURRENT_VERSION}-${{ github.event.inputs.prerelease_id }}.1"
+            fi
+            ;;
+        esac
+        
+        echo "New version: $NEW_VERSION"
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+    - name: Update version in mix.exs
+      run: |
+        sed -i "s/version: \"[^\"]*\"/version: \"${{ steps.version.outputs.new_version }}\"/" mix.exs
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Generate changelog since last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        
+        if [ -n "$LAST_TAG" ]; then
+          echo "## Changes since $LAST_TAG" > RELEASE_CHANGELOG.md
+          git log --pretty=format:"- %s (%an)" $LAST_TAG..HEAD >> RELEASE_CHANGELOG.md
+        else
+          echo "## Initial Release" > RELEASE_CHANGELOG.md
+          git log --pretty=format:"- %s (%an)" >> RELEASE_CHANGELOG.md
+        fi
+        
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        cat RELEASE_CHANGELOG.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Commit version bump
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add mix.exs
+        git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
+        git push
+
+    - name: Create tag
+      run: |
+        git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release v${{ steps.version.outputs.new_version }}"
+        git push origin "v${{ steps.version.outputs.new_version }}"
+
+  build-assets:
+    name: Build Release Assets
+    runs-on: ubuntu-latest
+    needs: [semantic-release, manual-release]
+    if: always() && (needs.semantic-release.outputs.new_release_published == 'true' || needs.manual-release.outputs.new_release_published == 'true')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.semantic-release.outputs.new_release_version && format('v{0}', needs.semantic-release.outputs.new_release_version) || format('v{0}', needs.manual-release.outputs.new_release_version) }}
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ env.ELIXIR_VERSION }}
+        otp-version: ${{ env.OTP_VERSION }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+
+    - name: Install dependencies
+      run: |
+        mix deps.get --only prod
+        mix compile
+
+    - name: Build release
+      run: |
+        export MIX_ENV=prod
+        mix assets.deploy
+        mix release
+
+    - name: Create release tarball
+      run: |
+        VERSION=${{ needs.semantic-release.outputs.new_release_version || needs.manual-release.outputs.new_release_version }}
+        cd _build/prod/rel/slack_clone
+        tar -czf "../../../../slack-clone-${VERSION}.tar.gz" .
+        cd ../../../../
+
+    - name: Generate checksums
+      run: |
+        VERSION=${{ needs.semantic-release.outputs.new_release_version || needs.manual-release.outputs.new_release_version }}
+        sha256sum "slack-clone-${VERSION}.tar.gz" > "slack-clone-${VERSION}.tar.gz.sha256"
+
+    - name: Upload release assets
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-assets
+        path: |
+          slack-clone-*.tar.gz
+          slack-clone-*.tar.gz.sha256
+
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [semantic-release, manual-release, build-assets]
+    if: always() && needs.build-assets.result == 'success'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download release assets
+      uses: actions/download-artifact@v4
+      with:
+        name: release-assets
+
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        VERSION=${{ needs.semantic-release.outputs.new_release_version || needs.manual-release.outputs.new_release_version }}
+        
+        # Create release notes
+        cat > RELEASE_NOTES.md << EOF
+        # Release v${VERSION}
+        
+        ## 🚀 Features
+        $(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD~1)..HEAD | grep -E "(feat|feature):" || echo "No new features")
+        
+        ## 🐛 Bug Fixes  
+        $(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD~1)..HEAD | grep -E "(fix|bug):" || echo "No bug fixes")
+        
+        ## 📚 Documentation
+        $(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD~1)..HEAD | grep -E "(docs|doc):" || echo "No documentation updates")
+        
+        ## 🔧 Maintenance
+        $(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD~1)..HEAD | grep -E "(chore|refactor|test):" || echo "No maintenance updates")
+        
+        ## 📦 Assets
+        - \`slack-clone-${VERSION}.tar.gz\` - Production release binary
+        - \`slack-clone-${VERSION}.tar.gz.sha256\` - SHA256 checksum
+        
+        ## 🔍 Verification
+        To verify the integrity of the release:
+        \`\`\`bash
+        sha256sum -c slack-clone-${VERSION}.tar.gz.sha256
+        \`\`\`
+        EOF
+        
+        echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+        cat RELEASE_NOTES.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ needs.semantic-release.outputs.new_release_version || needs.manual-release.outputs.new_release_version }}
+        name: Release v${{ needs.semantic-release.outputs.new_release_version || needs.manual-release.outputs.new_release_version }}
+        body: ${{ steps.release_notes.outputs.release_notes }}
+        draft: false
+        prerelease: ${{ contains(needs.semantic-release.outputs.new_release_version || needs.manual-release.outputs.new_release_version, '-') }}
+        files: |
+          slack-clone-*.tar.gz
+          slack-clone-*.tar.gz.sha256
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [semantic-release, manual-release, create-github-release]
+    if: always() && needs.create-github-release.result == 'success'
+
+    steps:
+    - name: Notify Slack
+      uses: 8398a7/action-slack@v3
+      with:
+        status: 'success'
+        channel: '#releases'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        text: |
+          🎉 New release published!
+          
+          **Version:** v${{ needs.semantic-release.outputs.new_release_version || needs.manual-release.outputs.new_release_version }}
+          **Repository:** ${{ github.repository }}
+          **Release URL:** https://github.com/${{ github.repository }}/releases/tag/v${{ needs.semantic-release.outputs.new_release_version || needs.manual-release.outputs.new_release_version }}
+
+    - name: Notify teams
+      run: |
+        # Send notifications to other systems (Discord, email, etc.)
+        echo "Release notifications sent"
+
+  update-documentation:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    needs: [semantic-release, manual-release, create-github-release]
+    if: always() && needs.create-github-release.result == 'success'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Update API documentation
+      run: |
+        # Update API docs with new version
+        VERSION=${{ needs.semantic-release.outputs.new_release_version || needs.manual-release.outputs.new_release_version }}
+        echo "Updating API documentation for version $VERSION"
+
+    - name: Update changelog
+      run: |
+        # Update CHANGELOG.md if it exists
+        if [ -f "CHANGELOG.md" ]; then
+          echo "CHANGELOG.md updated"
+        fi

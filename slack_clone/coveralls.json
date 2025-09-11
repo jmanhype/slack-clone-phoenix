@@ -1,0 +1,33 @@
+{
+  "coverage_options": {
+    "treat_no_relevant_lines_as_covered": true,
+    "output_dir": "cover/",
+    "template_path": "cover/excoveralls.html.eex"
+  },
+  "terminal_options": {
+    "file_column_width": 40
+  },
+  "custom": {
+    "plugin": "html"
+  },
+  "skip_files": [
+    "test/",
+    "priv/",
+    "lib/slack_clone/release.ex",
+    "lib/slack_clone_web/telemetry.ex"
+  ],
+  "minimum_coverage": 90,
+  "coverage_threshold": {
+    "lib/slack_clone/accounts/": 95,
+    "lib/slack_clone/channels/": 95,
+    "lib/slack_clone/messages/": 95,
+    "lib/slack_clone/workspaces/": 95,
+    "lib/slack_clone_web/live/": 85,
+    "lib/slack_clone_web/controllers/": 85,
+    "lib/slack_clone/": 90
+  },
+  "stop_on_failure": false,
+  "lcov": {
+    "output_dir": "cover"
+  }
+}

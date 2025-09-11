@@ -1,0 +1,13 @@
+{
+  "test_results": [
+    {
+      "test_name": "Server Connectivity",
+      "status": "FAIL",
+      "response_code": "406",
+      "response_time": "2000",
+      "details": "Server not responding properly",
+      "timestamp": 1757538680.938659
+    }
+  ],
+  "summary": {}
+}

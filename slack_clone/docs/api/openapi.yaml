@@ -1,0 +1,1351 @@
+openapi: 3.0.3
+info:
+  title: Slack Clone API
+  description: |
+    A comprehensive real-time messaging API built with Phoenix Framework.
+    
+    ## Features
+    - Real-time messaging with WebSocket channels
+    - JWT-based authentication with refresh tokens
+    - File uploads and attachments
+    - Message reactions and threading
+    - Workspace and channel management
+    - User presence tracking
+    - Typing indicators
+    
+    ## Base URL
+    All API requests should be made to: `https://api.slackclone.com`
+    
+    ## Authentication
+    The API uses JWT Bearer tokens for authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+    
+    ## Rate Limiting
+    - API requests are limited to 1000 requests per hour per user
+    - WebSocket connections are limited to 100 concurrent connections per user
+    - File uploads are limited to 100MB per file
+    
+  version: 1.0.0
+  contact:
+    name: Slack Clone API Support
+    email: api-support@slackclone.com
+    url: https://slackclone.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.slackclone.com
+    description: Production server
+  - url: https://staging-api.slackclone.com
+    description: Staging server
+  - url: http://localhost:4000
+    description: Local development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user and get JWT tokens
+      description: |
+        Authenticate a user with email and password. Returns access and refresh tokens.
+        
+        Access tokens expire in 1 hour, refresh tokens expire in 7 days.
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: "secretpassword"
+            examples:
+              valid_login:
+                summary: Valid login credentials
+                value:
+                  email: "john.doe@example.com"
+                  password: "mypassword123"
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        description: JWT access token (expires in 1 hour)
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      refresh_token:
+                        type: string
+                        description: JWT refresh token (expires in 7 days)
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      user:
+                        $ref: '#/components/schemas/User'
+              examples:
+                success_response:
+                  summary: Successful authentication
+                  value:
+                    data:
+                      access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzbGFja19jbG9uZSIsImV4cCI6MTY5NDk3NjAwMCwiaWF0IjoxNjk0OTcyNDAwLCJpc3MiOiJzbGFja19jbG9uZSIsImp0aSI6IjEyMzQ1Njc4LTEyMzQtNTY3OC0xMjM0LTEyMzQ1Njc4OTAiLCJuYmYiOjE2OTQ5NzI0MDAsInN1YiI6IjEyMzQ1Njc4LTEyMzQtNTY3OC0xMjM0LTEyMzQ1Njc4OTAiLCJ0eXAiOiJhY2Nlc3MifQ.example"
+                      refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzbGFja19jbG9uZSIsImV4cCI6MTY5NTU3NzIwMCwiaWF0IjoxNjk0OTcyNDAwLCJpc3MiOiJzbGFja19jbG9uZSIsImp0aSI6IjEyMzQ1Njc4LTEyMzQtNTY3OC0xMjM0LTEyMzQ1Njc4OTAiLCJuYmYiOjE2OTQ5NzI0MDAsInN1YiI6IjEyMzQ1Njc4LTEyMzQtNTY3OC0xMjM0LTEyMzQ1Njc4OTAiLCJ0eXAiOiJyZWZyZXNoIn0.example"
+                      user:
+                        id: "12345678-1234-5678-1234-123456789012"
+                        email: "john.doe@example.com"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: |
+        Get a new access token using a valid refresh token.
+        The refresh token remains valid until its expiration.
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Valid refresh token
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token refresh successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        description: New JWT access token
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout user
+      description: |
+        Logout the current user. This invalidates the current session.
+        Note: In the current implementation, tokens are not blacklisted.
+      operationId: logoutUser
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Logged out successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # User Endpoints
+  /api/me:
+    get:
+      tags: [User]
+      summary: Get current user profile
+      description: Get the profile information of the authenticated user
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    put:
+      tags: [User]
+      summary: Update current user profile
+      description: Update the profile information of the authenticated user
+      operationId: updateCurrentUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                      example: "newemail@example.com"
+                    name:
+                      type: string
+                      example: "John Doe"
+                    avatar_url:
+                      type: string
+                      format: uri
+                      example: "https://example.com/avatar.jpg"
+      responses:
+        '200':
+          description: User profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # Workspace Endpoints
+  /api/workspaces:
+    get:
+      tags: [Workspaces]
+      summary: List user workspaces
+      description: Get all workspaces that the user is a member of
+      operationId: listWorkspaces
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of workspaces retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workspace'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Workspaces]
+      summary: Create new workspace
+      description: Create a new workspace with the authenticated user as owner
+      operationId: createWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                  example: "My Awesome Team"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "A workspace for our awesome team collaboration"
+                is_public:
+                  type: boolean
+                  default: false
+                  example: true
+      responses:
+        '201':
+          description: Workspace created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Workspace'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/workspaces/{workspace_id}:
+    parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        description: Workspace UUID
+        schema:
+          type: string
+          format: uuid
+          example: "12345678-1234-5678-1234-123456789012"
+
+    get:
+      tags: [Workspaces]
+      summary: Get workspace details
+      description: Get detailed information about a specific workspace
+      operationId: getWorkspace
+      responses:
+        '200':
+          description: Workspace details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkspaceDetails'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Workspaces]
+      summary: Update workspace
+      description: Update workspace information (owner only)
+      operationId: updateWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                  example: "Updated Team Name"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "Updated description"
+                is_public:
+                  type: boolean
+                  example: false
+      responses:
+        '200':
+          description: Workspace updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Workspace'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags: [Workspaces]
+      summary: Delete workspace
+      description: Delete a workspace (owner only)
+      operationId: deleteWorkspace
+      responses:
+        '204':
+          description: Workspace deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Channel Endpoints
+  /api/workspaces/{workspace_id}/channels:
+    parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        description: Workspace UUID
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Channels]
+      summary: List workspace channels
+      description: Get all channels in a workspace that the user can access
+      operationId: listChannels
+      parameters:
+        - name: type
+          in: query
+          description: Filter channels by type
+          schema:
+            type: string
+            enum: [public, private, direct]
+        - name: member
+          in: query
+          description: Filter to only channels user is a member of
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of channels retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Channel'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Channels]
+      summary: Create new channel
+      description: Create a new channel in the workspace
+      operationId: createChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - type
+              properties:
+                name:
+                  type: string
+                  pattern: '^[a-z0-9_-]+$'
+                  minLength: 1
+                  maxLength: 21
+                  example: "general-discussion"
+                type:
+                  type: string
+                  enum: [public, private]
+                  example: "public"
+                description:
+                  type: string
+                  maxLength: 250
+                  example: "General discussion channel"
+                topic:
+                  type: string
+                  maxLength: 250
+                  example: "Discuss anything related to our project"
+      responses:
+        '201':
+          description: Channel created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Channel'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/workspaces/{workspace_id}/channels/{channel_id}:
+    parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        description: Workspace UUID
+        schema:
+          type: string
+          format: uuid
+      - name: channel_id
+        in: path
+        required: true
+        description: Channel UUID
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Channels]
+      summary: Get channel details
+      description: Get detailed information about a specific channel
+      operationId: getChannel
+      responses:
+        '200':
+          description: Channel details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ChannelDetails'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Channels]
+      summary: Update channel
+      description: Update channel information (members with appropriate permissions)
+      operationId: updateChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  pattern: '^[a-z0-9_-]+$'
+                  minLength: 1
+                  maxLength: 21
+                description:
+                  type: string
+                  maxLength: 250
+                topic:
+                  type: string
+                  maxLength: 250
+      responses:
+        '200':
+          description: Channel updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Channel'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags: [Channels]
+      summary: Delete channel
+      description: Delete a channel (admin only)
+      operationId: deleteChannel
+      responses:
+        '204':
+          description: Channel deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Message Endpoints
+  /api/workspaces/{workspace_id}/channels/{channel_id}/messages:
+    parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        description: Workspace UUID
+        schema:
+          type: string
+          format: uuid
+      - name: channel_id
+        in: path
+        required: true
+        description: Channel UUID
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Messages]
+      summary: Get channel messages
+      description: Get messages from a channel with pagination
+      operationId: getMessages
+      parameters:
+        - name: before
+          in: query
+          description: Get messages before this message ID
+          schema:
+            type: string
+            format: uuid
+        - name: after
+          in: query
+          description: Get messages after this message ID
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Number of messages to retrieve
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: include_threads
+          in: query
+          description: Include thread replies in response
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  has_more:
+                    type: boolean
+                    description: Whether there are more messages available
+                  cursor:
+                    type: string
+                    description: Cursor for pagination
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Messages]
+      summary: Send message to channel
+      description: Send a new message to the specified channel
+      operationId: sendMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 4000
+                  example: "Hello everyone! 👋"
+                thread_id:
+                  type: string
+                  format: uuid
+                  description: Reply to a specific message thread
+                attachments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Attachment'
+                  maxItems: 10
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Message'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/messages/{message_id}:
+    parameters:
+      - name: message_id
+        in: path
+        required: true
+        description: Message UUID
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      tags: [Messages]
+      summary: Edit message
+      description: Edit an existing message (author only, within 5 minutes)
+      operationId: editMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 4000
+                  example: "Updated message content"
+      responses:
+        '200':
+          description: Message updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Message'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags: [Messages]
+      summary: Delete message
+      description: Delete a message (author or admin only)
+      operationId: deleteMessage
+      responses:
+        '204':
+          description: Message deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/messages/{message_id}/reactions:
+    parameters:
+      - name: message_id
+        in: path
+        required: true
+        description: Message UUID
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Messages]
+      summary: Add reaction to message
+      description: Add an emoji reaction to a message
+      operationId: addReaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - emoji
+              properties:
+                emoji:
+                  type: string
+                  pattern: '^:[a-z0-9_+-]+:$'
+                  example: ":thumbsup:"
+      responses:
+        '201':
+          description: Reaction added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Reaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/messages/{message_id}/reactions/{reaction_id}:
+    parameters:
+      - name: message_id
+        in: path
+        required: true
+        description: Message UUID
+        schema:
+          type: string
+          format: uuid
+      - name: reaction_id
+        in: path
+        required: true
+        description: Reaction UUID
+        schema:
+          type: string
+          format: uuid
+
+    delete:
+      tags: [Messages]
+      summary: Remove reaction from message
+      description: Remove your emoji reaction from a message
+      operationId: removeReaction
+      responses:
+        '204':
+          description: Reaction removed successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from the login endpoint.
+        Format: `Bearer <token>`
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "12345678-1234-5678-1234-123456789012"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            name:
+              type: string
+              example: "John Doe"
+            avatar_url:
+              type: string
+              format: uri
+              nullable: true
+              example: "https://example.com/avatars/john.jpg"
+            inserted_at:
+              type: string
+              format: date-time
+              example: "2023-09-15T10:30:00Z"
+            updated_at:
+              type: string
+              format: date-time
+              example: "2023-09-16T14:22:00Z"
+
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "12345678-1234-5678-1234-123456789012"
+        name:
+          type: string
+          example: "My Awesome Team"
+        description:
+          type: string
+          nullable: true
+          example: "A workspace for our awesome team collaboration"
+        is_public:
+          type: boolean
+          example: false
+        owner_id:
+          type: string
+          format: uuid
+          example: "98765432-9876-5432-9876-987654321098"
+        member_count:
+          type: integer
+          example: 12
+        inserted_at:
+          type: string
+          format: date-time
+          example: "2023-09-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-09-16T14:22:00Z"
+
+    WorkspaceDetails:
+      allOf:
+        - $ref: '#/components/schemas/Workspace'
+        - type: object
+          properties:
+            channels:
+              type: array
+              items:
+                $ref: '#/components/schemas/Channel'
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/WorkspaceMember'
+
+    WorkspaceMember:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        role:
+          type: string
+          enum: [owner, admin, member]
+          example: "member"
+        joined_at:
+          type: string
+          format: date-time
+          example: "2023-09-15T10:30:00Z"
+
+    Channel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "12345678-1234-5678-1234-123456789012"
+        name:
+          type: string
+          example: "general"
+        type:
+          type: string
+          enum: [public, private, direct]
+          example: "public"
+        description:
+          type: string
+          nullable: true
+          example: "General discussion channel"
+        topic:
+          type: string
+          nullable: true
+          example: "Discuss anything related to our project"
+        workspace_id:
+          type: string
+          format: uuid
+          example: "98765432-9876-5432-9876-987654321098"
+        created_by:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        member_count:
+          type: integer
+          example: 8
+        unread_count:
+          type: integer
+          example: 3
+          description: Number of unread messages for the current user
+        last_message_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2023-09-16T16:45:00Z"
+        inserted_at:
+          type: string
+          format: date-time
+          example: "2023-09-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-09-16T14:22:00Z"
+
+    ChannelDetails:
+      allOf:
+        - $ref: '#/components/schemas/Channel'
+        - type: object
+          properties:
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChannelMember'
+            pinned_messages:
+              type: array
+              items:
+                $ref: '#/components/schemas/Message'
+
+    ChannelMember:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        role:
+          type: string
+          enum: [admin, member]
+          example: "member"
+        joined_at:
+          type: string
+          format: date-time
+          example: "2023-09-15T10:30:00Z"
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "12345678-1234-5678-1234-123456789012"
+        content:
+          type: string
+          example: "Hello everyone! How's the project going?"
+        channel_id:
+          type: string
+          format: uuid
+          example: "98765432-9876-5432-9876-987654321098"
+        user_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        thread_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "22222222-2222-2222-2222-222222222222"
+        parent_message_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "33333333-3333-3333-3333-333333333333"
+        reply_count:
+          type: integer
+          example: 3
+          description: Number of replies in thread
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+        reactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReactionSummary'
+        mentions:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: User IDs mentioned in the message
+        is_edited:
+          type: boolean
+          example: false
+        edited_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2023-09-16T16:50:00Z"
+        inserted_at:
+          type: string
+          format: date-time
+          example: "2023-09-16T16:45:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-09-16T16:45:00Z"
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "12345678-1234-5678-1234-123456789012"
+        filename:
+          type: string
+          example: "document.pdf"
+        content_type:
+          type: string
+          example: "application/pdf"
+        size:
+          type: integer
+          example: 1048576
+          description: File size in bytes
+        url:
+          type: string
+          format: uri
+          example: "https://files.slackclone.com/attachments/12345678-1234-5678-1234-123456789012/document.pdf"
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://files.slackclone.com/thumbnails/12345678-1234-5678-1234-123456789012.jpg"
+
+    Reaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "12345678-1234-5678-1234-123456789012"
+        emoji:
+          type: string
+          example: ":thumbsup:"
+        message_id:
+          type: string
+          format: uuid
+          example: "98765432-9876-5432-9876-987654321098"
+        user_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        inserted_at:
+          type: string
+          format: date-time
+          example: "2023-09-16T16:45:00Z"
+
+    ReactionSummary:
+      type: object
+      properties:
+        emoji:
+          type: string
+          example: ":thumbsup:"
+        count:
+          type: integer
+          example: 5
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfile'
+          maxItems: 3
+          description: First few users who reacted (for display purposes)
+        user_reacted:
+          type: boolean
+          example: true
+          description: Whether the current user has reacted with this emoji
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total_pages:
+          type: integer
+          example: 5
+        total_count:
+          type: integer
+          example: 97
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Resource not found"
+            code:
+              type: string
+              example: "NOT_FOUND"
+            details:
+              type: object
+              additionalProperties: true
+              example: {}
+
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Validation failed"
+            details:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+              example:
+                name: ["can't be blank", "must be at least 1 character"]
+                email: ["is not a valid email address"]
+
+  responses:
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            missing_token:
+              summary: Missing authentication token
+              value:
+                error:
+                  message: "Authentication required"
+                  code: "UNAUTHORIZED"
+            invalid_token:
+              summary: Invalid or expired token
+              value:
+                error:
+                  message: "Invalid or expired token"
+                  code: "INVALID_TOKEN"
+
+    Forbidden:
+      description: Access denied - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              message: "Insufficient permissions to access this resource"
+              code: "FORBIDDEN"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              message: "Resource not found"
+              code: "NOT_FOUND"
+
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    RateLimitExceeded:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              message: "Rate limit exceeded. Try again later."
+              code: "RATE_LIMIT_EXCEEDED"
+      headers:
+        X-RateLimit-Limit:
+          description: Request limit per hour
+          schema:
+            type: integer
+            example: 1000
+        X-RateLimit-Remaining:
+          description: Remaining requests in current window
+          schema:
+            type: integer
+            example: 0
+        X-RateLimit-Reset:
+          description: Time when rate limit resets (Unix timestamp)
+          schema:
+            type: integer
+            example: 1694976000
+
+tags:
+  - name: Authentication
+    description: User authentication and token management
+  - name: User
+    description: User profile management
+  - name: Workspaces
+    description: Workspace management operations
+  - name: Channels
+    description: Channel management operations
+  - name: Messages
+    description: Message operations including sending, editing, reactions
+
+externalDocs:
+  description: Find out more about Slack Clone API
+  url: https://docs.slackclone.com
