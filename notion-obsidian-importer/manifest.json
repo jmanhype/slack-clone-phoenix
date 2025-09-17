@@ -1,0 +1,12 @@
+{
+  "id": "notion-obsidian-importer",
+  "name": "Notion Obsidian Importer",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Import your Notion workspace to Obsidian with progressive download and conversion. Supports pages, databases, images, and maintains formatting.",
+  "author": "Frontend Developer",
+  "authorUrl": "https://github.com/notion-obsidian-importer",
+  "fundingUrl": "https://github.com/sponsors/notion-obsidian-importer",
+  "isDesktopOnly": false,
+  "js": "main.js"
+}
